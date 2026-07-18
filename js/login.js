@@ -9,13 +9,13 @@ const usuariosValidos = [
   {
     rol: 'administrador',
     usuario: 'carlos',
-    contrasena: 'pro123',
+    contrasena: 'pr123',
     destino: 'ganancias.html'
   },
   {
     rol: 'usuario',
     usuario: 'valeria',
-    contrasena: 'tomta123',
+    contrasena: 'tnt123',
     destino: 'usuarioreservaciones.html'
   }
 ];
