@@ -1,0 +1,271 @@
+:root {
+  --sidebar-bg: #2f4257;
+  --sidebar-accent: #5caee4;
+  --sidebar-text: #ffffff;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  width: 260px;
+  min-height: 100vh;
+  flex-shrink: 0;
+  background: var(--sidebar-bg);
+  border-radius: 0 32px 32px 0;
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  padding: 28px 0;
+  transition: width 0.25s ease;
+  overflow: hidden;
+}
+
+/* Código maestro para unificar el botón en todas las páginas */
+.sidebar-toggle {
+  width: 48px !important;
+  height: 48px !important;
+  /* margen: arriba, derecha, abajo, izquierda */
+  margin: 20px auto 20px 20px !important; 
+  border-radius: 50% !important;
+  border: none !important;
+  background-color: var(--accent, #6ab0e8) !important;
+  color: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+}
+
+/* Fuerza el tamaño del icono a 28px en todas partes */
+.sidebar-toggle svg {
+  width: 28px !important;
+  height: 28px !important;
+  display: block !important;
+}
+
+.sidebar-toggle svg,
+.sidebar-toggle i {
+  width: 22px;
+  height: 22px;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 24px 20px;
+}
+
+.sidebar-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.sidebar-brand-name {
+  color: var(--sidebar-text);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.sidebar-nav,
+.sidebar .menu,
+.sidebar .menu-links {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  padding: 0 12px;
+}
+
+.sidebar-link,
+.sidebar .menu-item,
+.sidebar-nav a,
+.sidebar .menu-links a,
+.sidebar-nav li a {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 24px;
+  color: var(--sidebar-text);
+  font-size: 18px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  border-radius: 12px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-link:hover,
+.sidebar .menu-item:hover,
+.sidebar-nav a:hover,
+.sidebar .menu-links a:hover,
+.sidebar-nav li a:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-link.active,
+.sidebar .menu-item.active,
+.sidebar-nav a.activo,
+.sidebar .menu-links a.active,
+.sidebar-nav li a.activo {
+  background: var(--sidebar-accent);
+}
+
+.sidebar-icon,
+.sidebar .menu-item i,
+.sidebar-nav a .icono,
+.sidebar .menu-links a i {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-icon svg,
+.sidebar-icon i,
+.sidebar .menu-item i,
+.sidebar-nav a .icono svg,
+.sidebar .menu-links a i {
+  width: 100%;
+  height: 100%;
+}
+
+.sidebar-admin,
+.sidebar .admin-profile,
+.sidebar .user-profile,
+.sidebar .sidebar-user,
+.sidebar .sidebar-footer {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 24px;
+  color: var(--sidebar-text);
+  font-size: 18px;
+  font-weight: 600;
+  margin: auto 12px 0;
+  border-radius: 24px;
+  background: rgba(72, 136, 178, 0.5);
+}
+
+.sidebar-admin.active {
+  background: var(--sidebar-accent);
+}
+
+.sidebar-admin .sidebar-icon,
+.sidebar .admin-profile .admin-avatar,
+.sidebar .user-profile .user-avatar,
+.sidebar .sidebar-user .icono,
+.sidebar .sidebar-footer .icono {
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-admin .sidebar-icon svg,
+.sidebar .admin-profile .admin-avatar i,
+.sidebar .user-profile .user-avatar i,
+.sidebar .sidebar-user .icono img,
+.sidebar .sidebar-footer .icono img {
+  width: 100%;
+  height: 100%;
+}
+
+.sidebar-label,
+.sidebar .menu-links a span {
+  transition: opacity 0.15s ease;
+}
+
+.sidebar.collapsed .sidebar-label,
+.sidebar.collapsed .menu-item span,
+.sidebar.collapsed .sidebar-link span {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+/* Apariencia compartida de iconos y texto en cada panel. */
+.sidebar,
+.sidebar button,
+.sidebar a {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.sidebar-admin .sidebar-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Comportamiento unificado para todas las vistas del panel */
+:root {
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 84px;
+}
+
+.app-container {
+  min-width: 0;
+}
+
+.sidebar,
+.sidebar:not(.collapsed) {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  height: 100dvh;
+  min-height: 100dvh;
+  flex: 0 0 var(--sidebar-width);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.sidebar.collapsed {
+  width: var(--sidebar-collapsed-width);
+  min-width: var(--sidebar-collapsed-width);
+  flex-basis: var(--sidebar-collapsed-width);
+}
+
+.sidebar.collapsed .sidebar-toggle {
+  margin-left: 18px;
+}
+
+.sidebar.collapsed .sidebar-link,
+.sidebar.collapsed .sidebar-admin {
+  gap: 0;
+  padding-left: 17px;
+  padding-right: 17px;
+}
+
+.main-content {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 30;
+  }
+
+  .main-content {
+    width: calc(100% - var(--sidebar-collapsed-width));
+    margin-left: var(--sidebar-collapsed-width);
+    padding: 24px;
+  }
+
+  .sidebar:not(.collapsed) ~ .main-content {
+    width: calc(100% - var(--sidebar-width));
+    margin-left: var(--sidebar-width);
+  }
+}
+
+@media (max-width: 560px) {
+  .main-content {
+    padding: 16px;
+  }
+}

@@ -1,0 +1,426 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #ffffff;
+    color: #333;
+    scroll-behavior: smooth;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 5%;
+    background-color: #ffffff;
+    border-bottom: 2px solid #f2f2f2;
+}
+
+.logo img {
+    height: 50px;
+}
+
+nav ul {
+    display: flex;
+    list-style: none;
+    gap: 30px;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: #444;
+    font-weight: 500;
+    font-size: 16px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    transition: all 0.3s;
+}
+
+nav ul li a.active, nav ul li a:hover {
+    background-color: #428bca;
+    color: white;
+}
+
+.auth-btn .btn-login {
+    background-color: #d1e231; 
+    color: #2b3a4a;
+    padding: 10px 20px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: background 0.2s;
+}
+
+.auth-btn .btn-login:hover {
+    background-color: #bece28;
+}
+
+.hero-section {
+    display: flex;
+    background-color: #4b86b4; /* Azul del hero */
+    min-height: 450px;
+    align-items: center;
+}
+
+.hero-content {
+    flex: 1;
+    padding: 60px 5% 60px 8%;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.hero-content .badge {
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    padding: 5px 15px;
+    border-radius: 15px;
+    width: fit-content;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.hero-content h1 {
+    font-size: 42px;
+    line-height: 1.2;
+    margin-bottom: 15px;
+}
+
+.hero-content h1 span {
+    color: #d1e231; 
+}
+
+.hero-content p {
+    font-size: 16px;
+    margin-bottom: 30px;
+    max-width: 500px;
+    opacity: 0.9;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 15px;
+}
+
+.btn-primary {
+    background-color: #eaf67b;
+    color: #2b3a4a;
+    padding: 12px 25px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+}
+
+.btn-secondary {
+    background-color: #2d3e52; 
+    color: #eaf67b;
+    padding: 12px 25px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+}
+
+.hero-image {
+    flex: 1;
+    height: 100%;
+    align-self: stretch;
+}
+
+.hero-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.services-section {
+    padding: 60px 5%;
+    text-align: center;
+    background-color: #ffffff;
+    background-image: radial-gradient(rgba(0,0,0,0.02) 2px, transparent 2px);
+    background-size: 30px 30px;
+}
+
+.section-title span {
+    color: #b3a776;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.section-title h2 {
+    color: #4b86b4;
+    font-size: 28px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+}
+
+.services-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 25px;
+    position: relative;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.service-card {
+    background-color: #fafdef;
+    border: 1px solid #e1e79f;
+    border-radius: 20px;
+    padding: 20px;
+    width: 260px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.05);
+    text-align: center;
+}
+
+.service-card img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 15px;
+    margin-bottom: 15px;
+}
+
+.service-tag {
+    display: inline-block;
+    background-color: #ffffff;
+    color: #4b86b4;
+    border: 2px solid #c2e28f;
+    padding: 4px 20px;
+    border-radius: 15px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.service-card p {
+    font-size: 14px;
+    color: #555;
+    line-height: 1.4;
+}
+
+.carousel-next {
+    background-color: #4b86b4;
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: background 0.2s;
+}
+
+.carousel-next:hover {
+    background-color: #356a93;
+}
+
+.gallery-section {
+    padding: 60px 5%;
+    text-align: center;
+    background-color: #fffde8; /* Fondo sutilmente amarillo de la sección */
+}
+
+.gallery-main {
+    max-width: 450px;
+    margin: 0 auto 20px auto;
+    background-color: #64b5f6; /* Marco azul brillante */
+    padding: 12px;
+    border-radius: 20px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+.gallery-main img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    border-radius: 12px;
+    display: block;
+}
+
+.gallery-caption {
+    background-color: #ffffff;
+    color: #666;
+    display: inline-block;
+    padding: 5px 20px;
+    border-radius: 15px;
+    font-size: 14px;
+    margin-top: 15px;
+    border: 1px solid #ddd;
+    font-weight: bold;
+}
+
+.gallery-thumbnails {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.thumb {
+    background-color: #90caf9; /* Marco azul claro */
+    border: none;
+    padding: 4px;
+    border-radius: 10px;
+    cursor: pointer;
+    width: 65px;
+    height: 65px;
+    overflow: hidden;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.thumb:hover, .thumb.active {
+    transform: scale(1.1);
+    background-color: #428bca; /* Marco más oscuro si está activo o hover */
+}
+
+.thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.info-section {
+    background-color: #7ec4fc; /* Fondo azul cielo */
+    padding: 60px 8%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 40px;
+}
+
+.hours-block {
+    flex: 1;
+    color: white;
+}
+
+.hours-block span {
+    color: #8c7e4c; /* Color beige/dorado del diseño */
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.hours-block h2 {
+    font-size: 32px;
+    margin-top: 5px;
+    margin-bottom: 25px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+.hours-row {
+    background-color: #ffffff;
+    color: #8c7e4c;
+    padding: 12px 20px;
+    border-radius: 15px;
+    margin-bottom: 15px;
+    max-width: 400px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.hours-row .time {
+    background-color: #cde4ff;
+    color: #4b86b4;
+    padding: 6px 15px;
+    border-radius: 10px;
+}
+
+/* Tarjeta Blanca de WhatsApp / Ubicación */
+.contact-card {
+    background-color: #ffffff;
+    border-radius: 25px;
+    padding: 30px;
+    width: 380px;
+    text-align: center;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.contact-icon img {
+    width: 70px; /* Tamaño del círculo azul con el pin de mapa */
+    height: 70px;
+    margin-bottom: 15px;
+}
+
+.contact-card p {
+    color: #7b7148;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+.contact-buttons {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn-whatsapp {
+    background-color: #ffffff;
+    color: #58a7f5;
+    border: 2px solid #e2f0fd;
+    padding: 12px 20px;
+    border-radius: 15px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.btn-whatsapp:hover {
+    background-color: #f7faff;
+    border-color: #58a7f5;
+}
+
+footer {
+    background-color: #42749d; /* Azul oscuro del pie */
+    padding: 30px 8%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+}
+
+.footer-logo img {
+    height: 45px;
+}
+
+.footer-credits h3 {
+    font-size: 14px;
+    color: #bbd3e8;
+    margin-bottom: 8px;
+}
+
+.footer-credits ul {
+    list-style: none;
+}
+
+.footer-credits ul li {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-bottom: 4px;
+}

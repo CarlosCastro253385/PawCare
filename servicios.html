@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PawCare - Servicios</title>
+    <link rel="stylesheet" href="css/layout-common.css">
+    <link rel="stylesheet" href="css/servicios.css">
+    <link rel="stylesheet" href="css/sidebar-common.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- BARRA LATERAL -->
+        <aside class="sidebar" id="sidebar">
+            <button class="sidebar-toggle" aria-label="Abrir/cerrar menú"><i class="fa-solid fa-bars"></i></button>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-house"></i></span><span class="sidebar-label">Inicio</span></a>
+                <a href="servicios.html" class="sidebar-link active"><span class="sidebar-icon"><i class="fa-solid fa-star"></i></span><span class="sidebar-label">Servicios</span></a>
+                <a href="mascotas.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-paw"></i></span><span class="sidebar-label">Mascotas</span></a>
+                <a href="reservaciones.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-calendar-days"></i></span><span class="sidebar-label">Reservas</span></a>
+                <a href="ganancias.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-credit-card"></i></span><span class="sidebar-label">Ganancias</span></a>
+            </nav>
+            <a href="perfil.html" class="sidebar-admin">
+                <span class="sidebar-icon"><img class="icono" src="img/usergenerall.png" alt=""></span>
+                <span class="sidebar-label">Administrador</span>
+            </a>
+        </aside>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <main class="main-content">
+            <div class="glass-panel">
+                <header class="content-header">
+                    <h2>Servicios</h2>
+                    <button id="btn-add-service" class="btn-primary">+ Agregar Servicio</button>
+                </header>
+
+                <!-- VISTA 1: CATÁLOGO DE SERVICIOS -->
+                <section id="view-catalog" class="content-view">
+                    <div class="services-list" id="services-container">
+                    </div>
+                </section>
+
+                <!-- VISTA 2: FORMULARIO AGREGAR / EDITAR -->
+                <section id="view-form" class="content-view hidden">
+                    <div class="form-layout">
+                        <!-- Bloque Foto -->
+                        <div class="image-uploader" id="image-dropzone">
+                            <input type="file" id="file-input" accept="image/*" hidden>
+                            <div class="preview-container">
+                                <i class="fa-regular fa-image" id="upload-icon"></i>
+                                <img id="form-preview" src="" alt="Vista previa" class="hidden">
+                            </div>
+                        </div>
+
+                        <!-- Bloque Campos -->
+                        <div class="fields-card">
+                            <div class="card-header-icon">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </div>
+                            <form id="service-form">
+                                <div class="custom-input">
+                                    <input type="text" id="service-name" placeholder="Nombre del servicio" required>
+                                    <i class="fa-solid fa-pen"></i>
+                                </div>
+                                <div class="custom-input">
+                                    <input type="text" id="service-title" placeholder="Titulo corto" required>
+                                    <i class="fa-solid fa-pen"></i>
+                                </div>
+                                <div class="custom-input">
+                                    <textarea id="service-desc" placeholder="Añadir descripción" rows="4" required></textarea>
+                                    <i class="fa-solid fa-pen"></i>
+                                </div>
+                                <div class="custom-input">
+                                    <input type="text" id="service-price" placeholder="Precio (Ej: $350 / $280 / $200)" required>
+                                    <i class="fa-solid fa-pen"></i>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <!-- Acciones del Formulario -->
+                    <div class="form-actions">
+                        <button type="button" id="btn-save" class="btn-success">Aceptar</button>
+                        <button type="button" id="btn-cancel" class="btn-danger">Cancelar</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL DE CAMBIOS GUARDADOS -->
+    <div id="success-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <div class="success-icon-circle">
+                <i class="fa-solid fa-user-check"></i>
+            </div>
+            <h3>CAMBIOS GUARDADOS</h3>
+            <p>Tus datos se registraron correctamente</p>
+        </div>
+    </div>
+
+    <script src="js/sidebar-common.js"></script>
+    <script src="js/servicios.js"></script>
+</body>
+</html>

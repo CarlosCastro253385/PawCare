@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PawCARE - Panel de administrador</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/layout-common.css">
+  <link rel="stylesheet" href="css/ganancias.css">
+  <link rel="stylesheet" href="css/sidebar-common.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <div class="app-container">
+    <aside class="sidebar" id="sidebar">
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Abrir/cerrar menú">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+
+      <nav class="sidebar-nav">
+                <a href="index.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-house"></i></span><span class="sidebar-label">Inicio</span></a>
+                <a href="servicios.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-star"></i></span><span class="sidebar-label">Servicios</span></a>
+                <a href="mascotas.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-paw"></i></span><span class="sidebar-label">Mascotas</span></a>
+                <a href="reservaciones.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-calendar-days"></i></span><span class="sidebar-label">Reservas</span></a>
+                <a href="ganancias.html" class="sidebar-link active"><span class="sidebar-icon"><i class="fa-solid fa-credit-card"></i></span><span class="sidebar-label">Ganancias</span></a>
+      </nav>
+      <a href="perfil.html" class="sidebar-admin">
+        <span class="sidebar-icon"><img class="icono" src="img/usergenerall.png" alt=""></span>
+        <span class="sidebar-label">Administrador</span>
+      </a>
+    </aside>
+
+    <main class="main-content">
+      <div class="glass-panel">
+        <div class="tabs">
+          <button type="button" class="tab-btn active" id="tabGraficasBtn">Gráficas</button>
+        <button type="button" class="tab-btn" id="tabEditarBtn">Editar datos</button>
+      </div>
+
+      <div class="tab-view" id="vistaGraficas">
+      <section class="card">
+        <h2 class="card-title">Espacio en la guardería</h2>
+        <div class="card-body card-body-split">
+          <div class="chart-wrap chart-wrap-pie">
+            <canvas id="espacioChart"></canvas>
+          </div>
+          <ul class="legend" id="espacioLeyenda"></ul>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Ganancias mensuales</h2>
+        <div class="card-body">
+          <div class="chart-wrap chart-wrap-bar">
+            <canvas id="gananciasChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Ingresos por servicio</h2>
+        <div class="card-body card-body-split">
+          <div class="chart-wrap chart-wrap-pie">
+            <canvas id="serviciosChart"></canvas>
+          </div>
+          <ul class="legend" id="serviciosLeyenda"></ul>
+        </div>
+      </section>
+
+      <button type="button" class="add-btn" id="agregarBtn">+ Agregar información</button>
+      </div>
+
+      <!-- ===== VISTA 2: EDITAR DATOS =====
+           Nota: esta parte es una MAQUETA para mostrar cómo se vería el
+           flujo de captura de datos. Los botones +/- y los bloques
+           funcionan visualmente (para que se entienda la idea), pero no
+           están conectados a una base de datos real todavía, soloes el diseno. -->
+      <div class="tab-view" id="vistaEditar" hidden>
+        <section class="card">
+          <h2 class="card-title">Espacio en la guardería</h2>
+
+          <div class="capacity-row">
+            <div class="capacity-box">
+              <span class="capacity-label">Total</span>
+              <div class="capacity-value" id="capacityTotal">50</div>
+            </div>
+            <div class="capacity-box">
+              <span class="capacity-label">Ocupado</span>
+              <div class="capacity-value" id="capacityOcupado">20</div>
+            </div>
+            <div class="capacity-box">
+              <span class="capacity-label">Libre</span>
+              <div class="capacity-value" id="capacityLibre">30</div>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="stepper-row">
+              <div class="stepper-info">
+                <span class="stepper-bar">Lugares reservados</span>
+                <span class="stepper-value" id="valorReservados">12</span>
+              </div>
+              <div class="stepper-controls">
+                <button type="button" class="stepper-btn" data-target="reservados" data-op="-">−</button>
+                <button type="button" class="stepper-btn" data-target="reservados" data-op="+">+</button>
+              </div>
+            </div>
+            <div class="stepper-row">
+              <div class="stepper-info">
+                <span class="stepper-bar">Lugares ocupados</span>
+                <span class="stepper-value" id="valorOcupados">20</span>
+              </div>
+              <div class="stepper-controls">
+                <button type="button" class="stepper-btn" data-target="ocupados" data-op="-">−</button>
+                <button type="button" class="stepper-btn" data-target="ocupados" data-op="+">+</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2 class="card-title">Ganancias mensuales</h2>
+
+          <div class="income-table-wrap">
+            <div class="block-grid-header">
+              <span>Enero</span><span>Febrero</span><span>Marzo</span><span>Abril</span>
+              <span>Mayo</span><span>Junio</span><span>Julio</span>
+            </div>
+            <p class="income-table-description">Registra el ingreso de cada servicio. Los totales se calculan automáticamente.</p>
+            <div class="income-table-scroll">
+              <table class="income-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Servicio</th>
+                    <th scope="col">Enero</th><th scope="col">Febrero</th><th scope="col">Marzo</th>
+                    <th scope="col">Abril</th><th scope="col">Mayo</th><th scope="col">Junio</th><th scope="col">Julio</th>
+                    <th scope="col">Total</th>
+                  </tr>
+                </thead>
+                <tbody id="incomeTableBody"></tbody>
+                <tfoot id="incomeTableFoot"></tfoot>
+              </table>
+            </div>
+            <p class="block-grid-hint">Haz clic en un bloque para llenarlo o vaciarlo — así es como se iría capturando cada mes.</p>
+          </div>
+
+        </section>
+
+        <button type="button" class="save-btn" id="guardarBtn">Guardar</button>
+      </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal-box">
+      <p>¿Estás seguro de que quieres modificar los datos?</p>
+      <div class="modal-actions">
+        <button type="button" class="btn-confirm" id="confirmarBtn">Confirmar</button>
+        <button type="button" class="btn-cancel" id="cancelarBtn">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="js/sidebar-common.js"></script>
+  <script src="js/ganancias.js"></script>
+</body>
+</html>
