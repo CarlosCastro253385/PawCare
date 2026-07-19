@@ -10,14 +10,17 @@ const citasRoutes = require('./routes/citasRoutes');
 const gananciasRoutes = require('./routes/gananciasRoutes');
 const perfilRoutes = require('./routes/perfilRoutes');
 
+const path = require('path');
 const app = express();
 
 app.use(cors()); // permite que tu frontend en Vercel le hable a esta API
 app.use(express.json()); // permite leer JSON en el body de las peticiones
 
-// Ruta raíz, solo para confirmar que la API está viva (como ya hacías antes)
+app.use(express.static(path.join(__dirname)));
+
+// Ruta raíz, carga la página principal
 app.get('/', (req, res) => {
-  res.json({ ok: true, mensaje: 'PawCARE API funcionando correctamente.' });
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.use('/api', authRoutes);
