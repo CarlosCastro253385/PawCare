@@ -1,5 +1,4 @@
-// URL base de tu API. Cambia esto cuando despliegues a tu EC2.
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = 'http://107.22.53.32:8080/api';
 
 // Colores de la marca PawCARE
 const colorVacio = '#2f4257';

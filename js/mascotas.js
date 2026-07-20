@@ -111,7 +111,6 @@ document.getElementById('btn-cancelar-cuidado').addEventListener('click', () => 
 // --- GUARDAR PRESCRIPCIÓN ---
 btnOpenPrescripcion.addEventListener('click', async () => {
     if (currentPetId) {
-        // Cargar prescripción existente si la hay
         try {
             const res = await fetch(`${URL_BASE}/mascotas/${currentPetId}`);
             const data = await res.json();
@@ -128,7 +127,9 @@ btnOpenPrescripcion.addEventListener('click', async () => {
                     document.getElementById('presc-via-otro').value = data.prescripcion.via;
                 }
             }
-        } catch(e) {}
+        } catch(e) {
+            console.error('Error al obtener la prescripción:', e);
+        }
     }
     prescripcionModal.classList.remove('hidden');
 });
@@ -263,36 +264,47 @@ function showGridView() {
     renderGrid();
 }
 
+// MODIFICADO: Consulta al backend directamente para obtener datos actualizados en tiempo real
 async function openDetailMode(id) {
     isEditMode = true;
     currentPetId = id;
-    let pet = petsData.find(p => (p.id_mascota || p.id) == id);
 
-    if (!pet) return;
-    currentBase64Image = pet.foto || '';
+    try {
+        const res = await fetch(`${URL_BASE}/mascotas/${id}`);
+        const data = await res.json();
 
-    document.getElementById('form-nombre').value = pet.nombre || '';
-    document.getElementById('form-genero').value = pet.genero || '';
-    document.getElementById('form-edad').value = pet.edad || '';
-    document.getElementById('form-raza').value = pet.raza || '';
-    document.getElementById('form-dueno').value = pet.dueno || '';
-    document.getElementById('form-telefono').value = pet.telefono || '';
-    txtIndicaciones.value = pet.indicaciones || "";
+        if (!res.ok || !data.ok || !data.mascota) {
+            throw new Error(data.mensaje || 'Error al obtener la mascota');
+        }
 
-    setFormFieldsDisabled(true);
-    actionButtons.classList.add('hidden');
-    cuidadoActions.classList.add('hidden');
-    btnDeletePet.classList.remove('hidden');
+        const pet = data.mascota;
+        currentBase64Image = pet.foto || '';
 
-    previewImage.src = pet.foto || 'https://via.placeholder.com/150';
+        document.getElementById('form-nombre').value = pet.nombre || '';
+        document.getElementById('form-genero').value = pet.genero || '';
+        document.getElementById('form-edad').value = pet.edad || '';
+        document.getElementById('form-raza').value = pet.raza || '';
+        document.getElementById('form-dueno').value = pet.dueno || '';
+        document.getElementById('form-telefono').value = pet.telefono || '';
+        txtIndicaciones.value = pet.indicaciones || "";
 
-    subviewData.classList.remove('hidden');
-    subviewCuidado.classList.add('hidden');
-    btnToggleData.classList.add('hidden');
-    btnToggleCuidado.classList.remove('hidden');
+        setFormFieldsDisabled(true);
+        actionButtons.classList.add('hidden');
+        cuidadoActions.classList.add('hidden');
+        btnDeletePet.classList.remove('hidden');
 
-    viewGrid.classList.add('hidden');
-    viewForm.classList.remove('hidden');
+        previewImage.src = pet.foto || 'https://via.placeholder.com/150';
+
+        subviewData.classList.remove('hidden');
+        subviewCuidado.classList.add('hidden');
+        btnToggleData.classList.add('hidden');
+        btnToggleCuidado.classList.remove('hidden');
+
+        viewGrid.classList.add('hidden');
+        viewForm.classList.remove('hidden');
+    } catch (err) {
+        showStatusModal('ERROR', err.message || 'No se pudo cargar la información.', false);
+    }
 }
 
 function openCreateMode() {
@@ -326,7 +338,6 @@ function setFormFieldsDisabled(disabled) {
 document.getElementById('pet-data-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    // NOTA: Se envían nombreCliente y telefonoCliente según requiere crearMascota() en backend
     const payload = {
         nombre: document.getElementById('form-nombre').value,
         genero: document.getElementById('form-genero').value,
@@ -375,6 +386,8 @@ document.getElementById('btn-guardar-cuidado').addEventListener('click', async (
                 genero: document.getElementById('form-genero').value,
                 edad: parseInt(document.getElementById('form-edad').value, 10) || 0,
                 raza: document.getElementById('form-raza').value,
+                nombreCliente: document.getElementById('form-dueno').value,
+                telefonoCliente: document.getElementById('form-telefono').value,
                 foto: currentBase64Image || previewImage.src,
                 indicaciones: txtIndicaciones.value
             })

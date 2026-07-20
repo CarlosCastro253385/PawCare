@@ -105,21 +105,41 @@ async function crearMascota(req, res) {
   }
 }
 
-// PUT /api/mascotas/:id
+// PUT /api/mascotas/:id (Actualiza tanto Mascota como datos del Cliente)
 async function actualizarMascota(req, res) {
   const { id } = req.params;
-  const { nombre, genero, edad, raza, foto, indicaciones } = req.body;
+  const { nombre, genero, edad, raza, foto, indicaciones, nombreCliente, telefonoCliente } = req.body;
 
+  const conexion = await pool.getConnection();
   try {
-    await pool.query(
+    await conexion.beginTransaction();
+
+    // 1. Obtener el id_cliente asignado a esta mascota
+    const [mascota] = await conexion.query('SELECT id_cliente FROM MASCOTA WHERE id_mascota = ?', [id]);
+
+    if (mascota.length > 0 && mascota[0].id_cliente) {
+      // 2. Actualizar datos del dueño
+      await conexion.query(
+        'UPDATE CLIENTE SET nombre = ?, contacto = ? WHERE id_cliente = ?',
+        [nombreCliente || 'Sin nombre', telefonoCliente || '', mascota[0].id_cliente]
+      );
+    }
+
+    // 3. Actualizar datos de la mascota
+    await conexion.query(
       `UPDATE MASCOTA SET nombre = ?, genero = ?, edad = ?, raza = ?, foto = ?, indicaciones = ?
        WHERE id_mascota = ?`,
       [nombre, genero, edad, raza, foto, indicaciones, id]
     );
-    return res.json({ ok: true });
+
+    await conexion.commit();
+    return res.json({ ok: true, mensaje: 'Mascota y cliente actualizados correctamente.' });
   } catch (error) {
+    await conexion.rollback();
     console.error('Error al actualizar mascota:', error);
-    return res.status(500).json({ ok: false, mensaje: 'Error del servidor.' });
+    return res.status(500).json({ ok: false, mensaje: 'Error del servidor al actualizar.' });
+  } finally {
+    conexion.release();
   }
 }
 
@@ -150,21 +170,31 @@ async function guardarPrescripcion(req, res) {
   }
 }
 
-// DELETE /api/mascotas/:id  <-- ¡AGREGADA!
+// DELETE /api/mascotas/:id (Elimina en cascada para evitar restricciones de clave foránea)
 async function eliminarMascota(req, res) {
   const { id } = req.params;
-
   const conexion = await pool.getConnection();
+
   try {
     await conexion.beginTransaction();
 
-    // Eliminar prescripciones primero para no romper claves foráneas
+    // 1. Eliminar prescripciones y comportamientos asociados
     await conexion.query('DELETE FROM PRESCRIPCION WHERE id_mascota = ?', [id]);
-    // Eliminar la mascota
+    await conexion.query('DELETE FROM COMPORTAMIENTO WHERE id_mascota = ?', [id]);
+
+    // 2. Obtener citas de la mascota y limpiar sus tablas hijas antes de borrar la cita
+    const [citas] = await conexion.query('SELECT id_cita FROM CITA WHERE id_mascota = ?', [id]);
+    for (const cita of citas) {
+      await conexion.query('DELETE FROM CITA_SERVICIO WHERE id_cita = ?', [cita.id_cita]);
+      await conexion.query('DELETE FROM PAGO WHERE id_cita = ?', [cita.id_cita]);
+      await conexion.query('DELETE FROM CITA WHERE id_cita = ?', [cita.id_cita]);
+    }
+
+    // 3. Eliminar finalmente el registro de la mascota
     await conexion.query('DELETE FROM MASCOTA WHERE id_mascota = ?', [id]);
 
     await conexion.commit();
-    return res.json({ ok: true, mensaje: 'Mascota eliminada correctamente.' });
+    return res.json({ ok: true, mensaje: 'Mascota y registros asociados eliminados correctamente.' });
   } catch (error) {
     await conexion.rollback();
     console.error('Error al eliminar mascota:', error);
@@ -180,5 +210,5 @@ module.exports = {
   crearMascota,
   actualizarMascota,
   guardarPrescripcion,
-  eliminarMascota
+  eliminarMascota,
 };
