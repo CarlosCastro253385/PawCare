@@ -184,8 +184,7 @@ if (agregarBtn) {
 }
 
 // ==============================================================
-// VISTA "EDITAR DATOS" — sigue siendo una simulacion local, NO
-// persiste en el backend todavia. Ver nota arriba en el chat.
+// VISTA "EDITAR DATOS" — Conexión Real con Backend MySQL
 // ==============================================================
 
 const tabGraficasBtn = document.getElementById('tabGraficasBtn');
@@ -224,7 +223,7 @@ document.querySelectorAll('.stepper-btn').forEach((boton) => {
     const objetivo = boton.dataset.target;
     const paso = boton.dataset.op === '+' ? 1 : -1;
     contadores[objetivo] = Math.min(CAPACIDAD_TOTAL, Math.max(0, contadores[objetivo] + paso));
-    valoresPorId[objetivo].textContent = contadores[objetivo];
+    if (valoresPorId[objetivo]) valoresPorId[objetivo].textContent = contadores[objetivo];
     actualizarBotonesStepper();
   });
 });
@@ -256,66 +255,71 @@ if (agregarDatoBtn) {
   });
 }
 
-guardarBtn.addEventListener('click', () => confirmModal.classList.add('active'));
+const guardarBtn = document.getElementById('guardarBtn');
+const confirmModal = document.getElementById('confirmModal');
+const confirmarBtn = document.getElementById('confirmarBtn');
+const cancelarBtn = document.getElementById('cancelarBtn');
 
-// 👇 SUSTITUYE DESDE AQUÍ
-confirmarBtn.addEventListener('click', async () => {
-  confirmModal.classList.remove('active');
+if (guardarBtn) {
+  guardarBtn.addEventListener('click', () => confirmModal.classList.add('active'));
+}
 
-  // 1. Calculamos la nueva capacidad total de los steppers
-  const nuevaCapacidadTotal = contadores.reservados + contadores.ocupados;
+// ---------- Confirmar y Guardar UNIFICADO ----------
+if (confirmarBtn) {
+  confirmarBtn.addEventListener('click', async () => {
+    confirmModal.classList.remove('active');
 
-  // 2. Mapeamos la tabla de meses para enviarla
-  const listaIngresos = [];
-  ingresosPorServicio.forEach((servicio) => {
-    servicio.valores.forEach((valor, indiceMes) => {
-      listaIngresos.push({
-        servicio: servicio.nombre,
-        mes: indiceMes,
-        total: valor
+    const nuevaCapacidadTotal = contadores.reservados + contadores.ocupados;
+
+    const listaIngresos = [];
+    ingresosPorServicio.forEach((servicio) => {
+      servicio.valores.forEach((valor, indiceMes) => {
+        listaIngresos.push({
+          servicio: servicio.nombre,
+          mes: indiceMes,
+          total: valor
+        });
       });
     });
-  });
 
-  try {
-    // 3. Petición POST y PUT al servidor
-    const [respCapacidad, respTabla] = await Promise.all([
-      fetch(`${API_BASE}/ganancias/capacidad`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ capacidadTotal: nuevaCapacidadTotal })
-      }),
-      fetch(`${API_BASE}/ganancias/registrar-ingresos-manuales`, {
+    try {
+      // Petición unificada enviando tabla + capacidad junta
+      const respuesta = await fetch(`${API_BASE}/ganancias/registrar-ingresos-manuales`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ingresos: listaIngresos })
-      })
-    ]);
+        body: JSON.stringify({ 
+          ingresos: listaIngresos,
+          capacidadTotal: nuevaCapacidadTotal 
+        })
+      });
 
-    const resultadoCapacidad = await respCapacidad.json();
-    const resultadoTabla = await respTabla.json();
+      const resultado = await respuesta.json();
 
-    if (!resultadoCapacidad.ok || !resultadoTabla.ok) {
-      throw new Error(resultadoCapacidad.mensaje || resultadoTabla.mensaje || 'Error en el servidor');
+      if (!resultado.ok) {
+        throw new Error(resultado.mensaje || 'Error en el servidor');
+      }
+
+      alert('¡Excelente! Los datos de capacidad y la tabla de ingresos se guardaron con éxito.');
+      location.reload();
+
+    } catch (error) {
+      console.error('Error al sincronizar datos con el backend:', error);
+      alert(error.message || 'Hubo un problema al guardar la información.');
     }
+  });
+}
 
-    alert('¡Excelente! Los datos se guardaron con éxito en la base de datos real.');
-    
-    // 4. Recargamos la página para actualizar gráficas automáticamente
-    location.reload();
+if (cancelarBtn) {
+  cancelarBtn.addEventListener('click', () => confirmModal.classList.remove('active'));
+}
 
-  } catch (error) {
-    console.error('Error al sincronizar datos con el backend:', error);
-    alert('Hubo un problema al guardar la información. Revisa la consola.');
-  }
-});
+if (confirmModal) {
+  confirmModal.addEventListener('click', (evento) => {
+    if (evento.target === confirmModal) confirmModal.classList.remove('active');
+  });
+}
 
-cancelarBtn.addEventListener('click', () => confirmModal.classList.remove('active'));
-confirmModal.addEventListener('click', (evento) => {
-  if (evento.target === confirmModal) confirmModal.classList.remove('active');
-});
-
-// ---------- Tabla de ingresos por servicio y mes (simulacion local) ----------
+// ---------- Tabla de ingresos por servicio y mes ----------
 const ingresosPorServicio = [
   { nombre: 'Hospedaje', valores: Array(12).fill(0) },
   { nombre: 'Baño', valores: Array(12).fill(0) },
@@ -338,15 +342,22 @@ function obtenerTotalesMensuales() {
 function actualizarTotalesTabla() {
   const totales = obtenerTotalesMensuales();
   ingresosPorServicio.forEach((servicio, i) => {
-    document.querySelector(`[data-total-servicio="${i}"]`).textContent = formatoMoneda.format(totalizarServicio(servicio));
+    const el = document.querySelector(`[data-total-servicio="${i}"]`);
+    if (el) el.textContent = formatoMoneda.format(totalizarServicio(servicio));
   });
   totales.forEach((total, i) => {
-    document.querySelector(`[data-total-mes="${i}"]`).textContent = formatoMoneda.format(total);
+    const el = document.querySelector(`[data-total-mes="${i}"]`);
+    if (el) el.textContent = formatoMoneda.format(total);
   });
-  document.getElementById('incomeGrandTotal').textContent = formatoMoneda.format(totales.reduce((t, v) => t + v, 0));
+  const grandTotalEl = document.getElementById('incomeGrandTotal');
+  if (grandTotalEl) grandTotalEl.textContent = formatoMoneda.format(totales.reduce((t, v) => t + v, 0));
 }
 
 function renderizarTablaIngresos() {
+  if (!incomeTableBody || !incomeTableFoot) return;
+  incomeTableBody.innerHTML = '';
+  incomeTableFoot.innerHTML = '';
+
   ingresosPorServicio.forEach((servicio, indiceServicio) => {
     const fila = document.createElement('tr');
     const nombre = document.createElement('td');
