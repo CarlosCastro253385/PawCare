@@ -256,23 +256,58 @@ if (agregarDatoBtn) {
   });
 }
 
-const guardarBtn = document.getElementById('guardarBtn');
-const confirmModal = document.getElementById('confirmModal');
-const confirmarBtn = document.getElementById('confirmarBtn');
-const cancelarBtn = document.getElementById('cancelarBtn');
-
 guardarBtn.addEventListener('click', () => confirmModal.classList.add('active'));
 
-confirmarBtn.addEventListener('click', () => {
+// 👇 SUSTITUYE DESDE AQUÍ
+confirmarBtn.addEventListener('click', async () => {
   confirmModal.classList.remove('active');
-  document.getElementById('capacityOcupado').textContent = contadores.ocupados;
-  document.getElementById('capacityLibre').textContent = Math.max(0, CAPACIDAD_TOTAL - contadores.ocupados);
 
-  datosGanancias.valores = obtenerTotalesMensuales();
-  gananciasChart.data.datasets[0].data = datosGanancias.valores;
-  gananciasChart.update();
+  // 1. Calculamos la nueva capacidad total de los steppers
+  const nuevaCapacidadTotal = contadores.reservados + contadores.ocupados;
 
-  alert('Datos guardados localmente (simulacion). Esto todavia no se guarda en la base de datos real.');
+  // 2. Mapeamos la tabla de meses para enviarla
+  const listaIngresos = [];
+  ingresosPorServicio.forEach((servicio) => {
+    servicio.valores.forEach((valor, indiceMes) => {
+      listaIngresos.push({
+        servicio: servicio.nombre,
+        mes: indiceMes,
+        total: valor
+      });
+    });
+  });
+
+  try {
+    // 3. Petición POST y PUT al servidor
+    const [respCapacidad, respTabla] = await Promise.all([
+      fetch(`${API_BASE}/ganancias/capacidad`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ capacidadTotal: nuevaCapacidadTotal })
+      }),
+      fetch(`${API_BASE}/ganancias/registrar-ingresos-manuales`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ingresos: listaIngresos })
+      })
+    ]);
+
+    const resultadoCapacidad = await respCapacidad.json();
+    const resultadoTabla = await respTabla.json();
+
+    if (!resultadoCapacidad.ok || !resultadoTabla.ok) {
+      throw new Error(resultadoCapacidad.mensaje || resultadoTabla.mensaje || 'Error en el servidor');
+    }
+
+    alert('¡Excelente! Los datos se guardaron con éxito en la base de datos real.');
+    
+    // 4. Recargamos la página para actualizar gráficas automáticamente
+    location.reload();
+
+  } catch (error) {
+    console.error('Error al sincronizar datos con el backend:', error);
+    alert('Hubo un problema al guardar la información. Revisa la consola.');
+  }
 });
 
 cancelarBtn.addEventListener('click', () => confirmModal.classList.remove('active'));

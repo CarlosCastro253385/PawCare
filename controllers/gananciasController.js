@@ -2,7 +2,6 @@
 const pool = require('../config/db');
 
 // GET /api/ganancias/espacio
-// Reemplaza el objeto "datosEspacio" quemado en ganancias.js.
 // Cuenta cuántas mascotas tienen una CITA activa hoy vs la capacidad total.
 async function obtenerEspacio(req, res) {
   try {
@@ -26,8 +25,26 @@ async function obtenerEspacio(req, res) {
   }
 }
 
+// PUT /api/ganancias/capacidad
+// Actualiza la capacidad total desde la sección "Editar datos"
+async function actualizarCapacidad(req, res) {
+  const { capacidadTotal } = req.body;
+
+  if (capacidadTotal === undefined || capacidadTotal < 0) {
+    return res.status(400).json({ ok: false, mensaje: 'Capacidad inválida.' });
+  }
+
+  try {
+    await pool.query('UPDATE LANDING_PAGE SET capacidad_total = ? LIMIT 1', [capacidadTotal]);
+    return res.json({ ok: true, mensaje: 'Capacidad actualizada correctamente.' });
+  } catch (error) {
+    console.error('Error al actualizar capacidad:', error);
+    return res.status(500).json({ ok: false, mensaje: 'Error del servidor.' });
+  }
+}
+
 // GET /api/ganancias/mensuales?anio=2026
-// Reemplaza "datosGanancias" — suma los PAGO por mes.
+// Suma TODO lo registrado en la tabla PAGO por mes (Citas + Manuales).
 async function obtenerGananciasMensuales(req, res) {
   const anio = req.query.anio || new Date().getFullYear();
 
@@ -41,8 +58,6 @@ async function obtenerGananciasMensuales(req, res) {
       [anio]
     );
 
-    // Rellenamos los 12 meses aunque no tengan pagos, para que la gráfica
-    // no se vea con huecos raros (igual que el arreglo fijo que tenías antes).
     const totalesPorMes = Array(12).fill(0);
     filas.forEach((fila) => {
       totalesPorMes[fila.mes - 1] = Number(fila.total);
@@ -56,13 +71,13 @@ async function obtenerGananciasMensuales(req, res) {
 }
 
 // GET /api/ganancias/por-servicio?anio=2026
-// Reemplaza "datosServicios" — suma los PAGO agrupados por servicio,
-// repartiendo el monto entre los servicios de cada cita si tuvo varios.
+// Combina y suma los ingresos de citas y los ingresos manuales por su respectivo servicio.
 async function obtenerIngresosPorServicio(req, res) {
   const anio = req.query.anio || new Date().getFullYear();
 
   try {
-    const [filas] = await pool.query(
+    // Consulta para obtener los ingresos vinculados a servicios reales en citas
+    const [ingresosCitas] = await pool.query(
       `SELECT s.nombre, SUM(p.monto_pagado / conteo.total_servicios) AS total
        FROM PAGO p
        JOIN CITA_SERVICIO cs ON p.id_cita = cs.id_cita
@@ -77,10 +92,34 @@ async function obtenerIngresosPorServicio(req, res) {
       [anio]
     );
 
+    // Consulta para obtener los ingresos manuales guardados desde tu tabla
+    const [ingresosManuales] = await pool.query(
+      `SELECT SUBSTRING_INDEX(metodo_pago, ' - ', -1) AS nombre, SUM(monto_pagado) AS total
+       FROM PAGO
+       WHERE YEAR(fecha_pago) = ? AND metodo_pago LIKE 'Manual - %'
+       GROUP BY metodo_pago`,
+      [anio]
+    );
+
+    // Mapeamos y unificamos ambos resultados en un solo mapa para no duplicar servicios
+    const mapaServicios = {};
+
+    ingresosCitas.forEach(f => {
+      mapaServicios[f.nombre] = Number(f.total);
+    });
+
+    ingresosManuales.forEach(f => {
+      if (mapaServicios[f.nombre]) {
+        mapaServicios[f.nombre] += Number(f.total);
+      } else {
+        mapaServicios[f.nombre] = Number(f.total);
+      }
+    });
+
     return res.json({
       ok: true,
-      etiquetas: filas.map((f) => f.nombre),
-      valores: filas.map((f) => Number(f.total)),
+      etiquetas: Object.keys(mapaServicios),
+      valores: Object.values(mapaServicios),
     });
   } catch (error) {
     console.error('Error al calcular ingresos por servicio:', error);
@@ -88,4 +127,65 @@ async function obtenerIngresosPorServicio(req, res) {
   }
 }
 
-module.exports = { obtenerEspacio, obtenerGananciasMensuales, obtenerIngresosPorServicio };
+// POST /api/ganancias/registrar-ingresos-manuales
+// Inserta o actualiza los ingresos manuales por mes para que no se dupliquen registros
+async function registrarIngresosManuales(req, res) {
+  const { ingresos } = req.body; 
+  
+  if (!ingresos || !Array.isArray(ingresos)) {
+    return res.status(400).json({ ok: false, mensaje: 'Datos inválidos.' });
+  }
+
+  const conexion = await pool.getConnection();
+  try {
+    await conexion.beginTransaction();
+
+    const anioActual = 2026;
+
+    for (const item of ingresos) {
+      const mesFormateado = String(item.mes + 1).padStart(2, '0');
+      const fechaSimulada = `${anioActual}-${mesFormateado}-01`;
+      const identificadorManual = `Manual - ${item.servicio}`;
+
+      // Verificamos si ya existe un registro manual de ese servicio para ese mes exacto
+      const [existe] = await conexion.query(
+        `SELECT id_pago FROM PAGO 
+         WHERE metodo_pago = ? AND MONTH(fecha_pago) = ? AND YEAR(fecha_pago) = ? LIMIT 1`,
+        [identificadorManual, item.mes + 1, anioActual]
+      );
+
+      if (existe.length > 0) {
+        // Si ya existe, sobreescribimos el monto
+        await conexion.query(
+          `UPDATE PAGO SET monto_pagado = ? WHERE id_pago = ?`,
+          [item.total, existe[0].id_pago]
+        );
+      } else if (item.total > 0) {
+        // Si es nuevo y tiene valor, lo insertamos
+        await conexion.query(
+          `INSERT INTO PAGO (monto_pagado, fecha_pago, metodo_pago) 
+           VALUES (?, ?, ?)`,
+          [item.total, fechaSimulada, identificadorManual]
+        );
+      }
+    }
+
+    await conexion.commit();
+    return res.json({ ok: true, mensaje: 'Ingresos manuales guardados perfectamente.' });
+  } catch (error) {
+    await conexion.rollback();
+    console.error('Error al registrar ingresos manuales:', error);
+    return res.status(500).json({ ok: false, mensaje: 'Error del servidor.' });
+  } finally {
+    conexion.release();
+  }
+}
+
+// Exportamos absolutamente todas las funciones necesarias
+module.exports = { 
+  obtenerEspacio, 
+  actualizarCapacidad,
+  obtenerGananciasMensuales, 
+  obtenerIngresosPorServicio, 
+  registrarIngresosManuales 
+};

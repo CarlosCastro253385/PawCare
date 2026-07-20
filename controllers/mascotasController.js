@@ -56,7 +56,7 @@ async function obtenerMascotaPorId(req, res) {
   }
 }
 
-// POST /api/mascotas
+// POST /api/mascotas (Vinculación automática por número de teléfono)
 async function crearMascota(req, res) {
   const { nombre, genero, edad, raza, foto, indicaciones, id_cliente, nombreCliente, telefonoCliente } = req.body;
 
@@ -71,13 +71,35 @@ async function crearMascota(req, res) {
     let idClienteFinal = id_cliente;
 
     if (!idClienteFinal && telefonoCliente) {
-      const [existentes] = await conexion.query('SELECT id_cliente FROM CLIENTE WHERE contacto = ?', [telefonoCliente]);
+      // 1. Buscar si existe una cuenta en USUARIO registrada con ese número de teléfono
+      const [usuarioEncontrado] = await conexion.query(
+        'SELECT id_usuario FROM USUARIO WHERE telefono = ?',
+        [telefonoCliente]
+      );
+
+      const idUsuarioAsociado = usuarioEncontrado.length > 0 ? usuarioEncontrado[0].id_usuario : null;
+
+      // 2. Buscar si el cliente ya existe en la tabla CLIENTE por su teléfono
+      const [existentes] = await conexion.query(
+        'SELECT id_cliente, id_usuario FROM CLIENTE WHERE contacto = ?',
+        [telefonoCliente]
+      );
+
       if (existentes.length > 0) {
         idClienteFinal = existentes[0].id_cliente;
+
+        // Si el cliente existía pero no estaba vinculado a su cuenta de usuario, lo actualizamos ahora
+        if (!existentes[0].id_usuario && idUsuarioAsociado) {
+          await conexion.query(
+            'UPDATE CLIENTE SET id_usuario = ? WHERE id_cliente = ?',
+            [idUsuarioAsociado, idClienteFinal]
+          );
+        }
       } else {
+        // 3. Si no existe, crear el nuevo CLIENTE enlazando id_usuario de una vez
         const [nuevoCliente] = await conexion.query(
-          'INSERT INTO CLIENTE (nombre, contacto) VALUES (?, ?)',
-          [nombreCliente || 'Sin nombre', telefonoCliente]
+          'INSERT INTO CLIENTE (nombre, contacto, id_usuario) VALUES (?, ?, ?)',
+          [nombreCliente || 'Sin nombre', telefonoCliente, idUsuarioAsociado]
         );
         idClienteFinal = nuevoCliente.insertId;
       }
@@ -88,6 +110,7 @@ async function crearMascota(req, res) {
       return res.status(400).json({ ok: false, mensaje: 'Falta el dueño de la mascota (id_cliente o datos de contacto).' });
     }
 
+    // 4. Crear la mascota en la BD
     const [resultado] = await conexion.query(
       `INSERT INTO MASCOTA (nombre, genero, edad, raza, foto, indicaciones, id_cliente)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -105,7 +128,7 @@ async function crearMascota(req, res) {
   }
 }
 
-// PUT /api/mascotas/:id (Actualiza tanto Mascota como datos del Cliente)
+// PUT /api/mascotas/:id
 async function actualizarMascota(req, res) {
   const { id } = req.params;
   const { nombre, genero, edad, raza, foto, indicaciones, nombreCliente, telefonoCliente } = req.body;
@@ -114,15 +137,31 @@ async function actualizarMascota(req, res) {
   try {
     await conexion.beginTransaction();
 
-    // 1. Obtener el id_cliente asignado a esta mascota
+    // 1. Obtener el id_cliente de la mascota
     const [mascota] = await conexion.query('SELECT id_cliente FROM MASCOTA WHERE id_mascota = ?', [id]);
 
     if (mascota.length > 0 && mascota[0].id_cliente) {
-      // 2. Actualizar datos del dueño
-      await conexion.query(
-        'UPDATE CLIENTE SET nombre = ?, contacto = ? WHERE id_cliente = ?',
-        [nombreCliente || 'Sin nombre', telefonoCliente || '', mascota[0].id_cliente]
-      );
+      // 2. Si el cliente no tiene id_usuario asignado, buscamos si ya se registró con su teléfono
+      if (telefonoCliente) {
+        const [usuarioEncontrado] = await conexion.query(
+          'SELECT id_usuario FROM USUARIO WHERE telefono = ?',
+          [telefonoCliente]
+        );
+        
+        const idUsuarioAsociado = usuarioEncontrado.length > 0 ? usuarioEncontrado[0].id_usuario : null;
+
+        if (idUsuarioAsociado) {
+          await conexion.query(
+            'UPDATE CLIENTE SET nombre = ?, contacto = ?, id_usuario = ? WHERE id_cliente = ?',
+            [nombreCliente || 'Sin nombre', telefonoCliente, idUsuarioAsociado, mascota[0].id_cliente]
+          );
+        } else {
+          await conexion.query(
+            'UPDATE CLIENTE SET nombre = ?, contacto = ? WHERE id_cliente = ?',
+            [nombreCliente || 'Sin nombre', telefonoCliente, mascota[0].id_cliente]
+          );
+        }
+      }
     }
 
     // 3. Actualizar datos de la mascota
@@ -170,7 +209,7 @@ async function guardarPrescripcion(req, res) {
   }
 }
 
-// DELETE /api/mascotas/:id (Elimina en cascada para evitar restricciones de clave foránea)
+// DELETE /api/mascotas/:id
 async function eliminarMascota(req, res) {
   const { id } = req.params;
   const conexion = await pool.getConnection();
@@ -178,11 +217,11 @@ async function eliminarMascota(req, res) {
   try {
     await conexion.beginTransaction();
 
-    // 1. Eliminar prescripciones y comportamientos asociados
+    // 1. Eliminar prescripciones y comportamientos
     await conexion.query('DELETE FROM PRESCRIPCION WHERE id_mascota = ?', [id]);
     await conexion.query('DELETE FROM COMPORTAMIENTO WHERE id_mascota = ?', [id]);
 
-    // 2. Obtener citas de la mascota y limpiar sus tablas hijas antes de borrar la cita
+    // 2. Limpiar citas asociadas
     const [citas] = await conexion.query('SELECT id_cita FROM CITA WHERE id_mascota = ?', [id]);
     for (const cita of citas) {
       await conexion.query('DELETE FROM CITA_SERVICIO WHERE id_cita = ?', [cita.id_cita]);
@@ -190,7 +229,7 @@ async function eliminarMascota(req, res) {
       await conexion.query('DELETE FROM CITA WHERE id_cita = ?', [cita.id_cita]);
     }
 
-    // 3. Eliminar finalmente el registro de la mascota
+    // 3. Eliminar mascota
     await conexion.query('DELETE FROM MASCOTA WHERE id_mascota = ?', [id]);
 
     await conexion.commit();
