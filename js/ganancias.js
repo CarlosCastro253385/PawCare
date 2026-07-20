@@ -1,166 +1,194 @@
-// ---------- Datos de ejemplo ----------
-// Sustituye estos números por los datos reales que traigas de tu backend.
-const datosEspacio = {
-  vacio: 40,
-  lleno: 60,
-};
+// URL base de tu API. Cambia esto cuando despliegues a tu EC2.
+const API_BASE = 'http://localhost:8080/api';
 
-const datosGanancias = {
-  meses: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio'],
-  valores: [3200, 5400, 4600, 2800, 7200, 6500, 4900],
-};
-
-const datosServicios = {
-  etiquetas: ['Hospedaje', 'Baño', 'Paseos'],
-  valores: [18000, 9900, 6700],
-};
-
-// Colores de la marca PawCARE, usados también en el resto del sitio
+// Colores de la marca PawCARE
 const colorVacio = '#2f4257';
 const colorLleno = '#4888b2';
 const colorBarra = '#5caee4';
-const coloresServicios = ['#2f4257', '#4888b2', '#8ed1fe'];
+const coloresServicios = ['#2f4257', '#4888b2', '#8ed1fe', '#a7dbf5', '#1d3348'];
+
+const MESES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
+let gananciasChart, serviciosChart, espacioChart;
+let datosGanancias = { meses: MESES, valores: Array(12).fill(0) };
+let datosServicios = { etiquetas: [], valores: [] };
+
+// ---------- Carga inicial de datos reales ----------
+async function cargarDatosGraficas() {
+  try {
+    const anio = new Date().getFullYear();
+
+    const [respEspacio, respMensuales, respServicio] = await Promise.all([
+      fetch(`${API_BASE}/ganancias/espacio`),
+      fetch(`${API_BASE}/ganancias/mensuales?anio=${anio}`),
+      fetch(`${API_BASE}/ganancias/por-servicio?anio=${anio}`)
+    ]);
+
+    const dataEspacio = await respEspacio.json();
+    const dataMensuales = await respMensuales.json();
+    const dataServicio = await respServicio.json();
+
+    if (!dataEspacio.ok || !dataMensuales.ok || !dataServicio.ok) {
+      throw new Error('Una de las respuestas del servidor no fue exitosa');
+    }
+
+    renderGraficaEspacio(dataEspacio);
+
+    datosGanancias.valores = dataMensuales.valores;
+    renderGraficaGanancias();
+
+    datosServicios.etiquetas = dataServicio.etiquetas;
+    datosServicios.valores = dataServicio.valores;
+    renderGraficaServicios();
+
+    // Reflejar tambien en las cajas de Ocupado/Libre si existen en tu HTML
+    const capOcupado = document.getElementById('capacityOcupado');
+    const capLibre = document.getElementById('capacityLibre');
+    if (capOcupado) capOcupado.textContent = dataEspacio.ocupado;
+    if (capLibre) capLibre.textContent = dataEspacio.libre;
+
+  } catch (error) {
+    console.error('Error al cargar datos de ganancias:', error);
+    alert('No se pudieron cargar los datos de ganancias. Intenta de nuevo.');
+  }
+}
 
 // ---------- Gráfica de pastel: Espacio en la guardería ----------
-const ctxEspacio = document.getElementById('espacioChart');
+function renderGraficaEspacio(dataEspacio) {
+  const ctxEspacio = document.getElementById('espacioChart');
 
-new Chart(ctxEspacio, {
-  type: 'doughnut',
-  data: {
-    labels: ['Vacío', 'Lleno'],
-    datasets: [
-      {
-        data: [datosEspacio.vacio, datosEspacio.lleno],
-        backgroundColor: [colorVacio, colorLleno],
+  espacioChart = new Chart(ctxEspacio, {
+    type: 'doughnut',
+    data: {
+      labels: ['Ocupado', 'Libre'],
+      datasets: [{
+        data: [dataEspacio.ocupado, dataEspacio.libre],
+        backgroundColor: [colorLleno, colorVacio],
         borderWidth: 0,
-      },
-    ],
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '55%',
-    plugins: {
-      legend: { display: false }, // usamos nuestra propia leyenda en el HTML
-      tooltip: {
-        callbacks: {
-          label: (item) => `${item.label}: ${item.raw}%`,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '55%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (item) => `${item.label}: ${item.raw} mascotas`,
+          },
         },
       },
     },
-  },
-});
+  });
 
-// Leyenda propia (círculo de color + texto), para que se vea igual al diseño
-const leyendaEspacio = document.getElementById('espacioLeyenda');
-const itemsLeyenda = [
-  { color: colorVacio, texto: 'Vacío' },
-  { color: colorLleno, texto: 'Lleno' },
-];
-
-itemsLeyenda.forEach(({ color, texto }) => {
-  const li = document.createElement('li');
-  li.innerHTML = `<span class="legend-dot" style="background:${color}"></span>${texto}`;
-  leyendaEspacio.appendChild(li);
-});
+  const leyendaEspacio = document.getElementById('espacioLeyenda');
+  leyendaEspacio.innerHTML = '';
+  [
+    { color: colorLleno, texto: `Ocupado: ${dataEspacio.ocupado}` },
+    { color: colorVacio, texto: `Libre: ${dataEspacio.libre}` },
+  ].forEach(({ color, texto }) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="legend-dot" style="background:${color}"></span>${texto}`;
+    leyendaEspacio.appendChild(li);
+  });
+}
 
 // ---------- Gráfica de barras: Ganancias mensuales ----------
-const ctxGanancias = document.getElementById('gananciasChart');
+function renderGraficaGanancias() {
+  const ctxGanancias = document.getElementById('gananciasChart');
 
-const gananciasChart = new Chart(ctxGanancias, {
-  type: 'bar',
-  data: {
-    labels: datosGanancias.meses,
-    datasets: [
-      {
+  gananciasChart = new Chart(ctxGanancias, {
+    type: 'bar',
+    data: {
+      labels: datosGanancias.meses,
+      datasets: [{
         label: 'Ganancias ($)',
         data: datosGanancias.valores,
         backgroundColor: colorBarra,
         borderRadius: 8,
         maxBarThickness: 56,
-      },
-    ],
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: (item) => `$${item.raw.toLocaleString('es-MX')}`,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: (item) => `$${item.raw.toLocaleString('es-MX')}` },
         },
       },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          callback: (valor) => `$${valor.toLocaleString('es-MX')}`,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { callback: (valor) => `$${valor.toLocaleString('es-MX')}` },
+          grid: { color: '#eeeeee' },
         },
-        grid: { color: '#eeeeee' },
-      },
-      x: {
-        grid: { display: false },
+        x: { grid: { display: false } },
       },
     },
-  },
-});
+  });
+}
 
 // ---------- Gráfica de pastel: Ingresos por servicio ----------
-const ctxServicios = document.getElementById('serviciosChart');
+function renderGraficaServicios() {
+  const ctxServicios = document.getElementById('serviciosChart');
 
-const serviciosChart = new Chart(ctxServicios, {
-  type: 'doughnut',
-  data: {
-    labels: datosServicios.etiquetas,
-    datasets: [
-      {
+  serviciosChart = new Chart(ctxServicios, {
+    type: 'doughnut',
+    data: {
+      labels: datosServicios.etiquetas,
+      datasets: [{
         data: datosServicios.valores,
         backgroundColor: coloresServicios,
         borderWidth: 0,
-      },
-    ],
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '55%',
-    plugins: {
-      legend: { display: false }, // usamos nuestra propia leyenda en el HTML
-      tooltip: {
-        callbacks: {
-          label: (item) => `${item.label}: $${item.raw.toLocaleString('es-MX')}`,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '55%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (item) => `${item.label}: $${item.raw.toLocaleString('es-MX')}`,
+          },
         },
       },
     },
-  },
-});
+  });
 
-// Leyenda propia, igual que en la gráfica de "Espacio en la guardería"
-const leyendaServicios = document.getElementById('serviciosLeyenda');
-datosServicios.etiquetas.forEach((texto, i) => {
-  const li = document.createElement('li');
-  li.innerHTML = `<span class="legend-dot" style="background:${coloresServicios[i]}"></span>${texto}: $${datosServicios.valores[i].toLocaleString('es-MX')}`;
-  leyendaServicios.appendChild(li);
-});
+  actualizarLeyendaServicios();
+}
+
+function actualizarLeyendaServicios() {
+  const leyendaServicios = document.getElementById('serviciosLeyenda');
+  leyendaServicios.innerHTML = '';
+  datosServicios.etiquetas.forEach((texto, i) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="legend-dot" style="background:${coloresServicios[i % coloresServicios.length]}"></span>${texto}: $${datosServicios.valores[i].toLocaleString('es-MX')}`;
+    leyendaServicios.appendChild(li);
+  });
+}
 
 // ---------- Botón "Agregar información" ----------
-// Por ahora solo muestra un aviso; conéctalo a tu formulario o modal real.
 const agregarBtn = document.getElementById('agregarBtn');
-agregarBtn.addEventListener('click', () => {
-  alert('Aquí conectas tu formulario o modal para agregar información nueva.');
-});
+if (agregarBtn) {
+  agregarBtn.addEventListener('click', () => {
+    alert('Aquí conectas tu formulario o modal para agregar información nueva.');
+  });
+}
 
 // ==============================================================
-// VISTA "EDITAR DATOS" — esto es una MAQUETA visual para mostrar
-// cómo se vería el flujo de captura de datos. No está conectada
-// a una base de datos real todavía; cuando tengas tu backend,
-// aquí es donde reemplazas estos valores de ejemplo por peticiones
-// reales (fetch) a tu servidor.
+// VISTA "EDITAR DATOS" — sigue siendo una simulacion local, NO
+// persiste en el backend todavia. Ver nota arriba en el chat.
 // ==============================================================
 
-// ---------- Cambiar entre pestañas ----------
 const tabGraficasBtn = document.getElementById('tabGraficasBtn');
 const tabEditarBtn = document.getElementById('tabEditarBtn');
 const vistaGraficas = document.getElementById('vistaGraficas');
@@ -177,9 +205,6 @@ function mostrarVista(nombre) {
 tabGraficasBtn.addEventListener('click', () => mostrarVista('graficas'));
 tabEditarBtn.addEventListener('click', () => mostrarVista('editar'));
 
-// ---------- Botones +/- de "Lugares reservados" / "Lugares ocupados" ----------
-// Cada fila lleva su propio contador de ejemplo en memoria, con un tope
-// máximo (la capacidad total) para que no se pueda pasar de ahí.
 const CAPACIDAD_TOTAL = 50;
 const contadores = { reservados: 12, ocupados: 20 };
 
@@ -191,11 +216,7 @@ function actualizarBotonesStepper() {
   document.querySelectorAll('.stepper-btn').forEach((boton) => {
     const objetivo = boton.dataset.target;
     const valor = contadores[objetivo];
-    if (boton.dataset.op === '-') {
-      boton.disabled = valor <= 0;
-    } else {
-      boton.disabled = valor >= CAPACIDAD_TOTAL;
-    }
+    boton.disabled = boton.dataset.op === '-' ? valor <= 0 : valor >= CAPACIDAD_TOTAL;
   });
 }
 
@@ -208,128 +229,87 @@ document.querySelectorAll('.stepper-btn').forEach((boton) => {
     actualizarBotonesStepper();
   });
 });
-
 actualizarBotonesStepper();
 
-// ---------- Cuadrícula de bloques de "Ganancias mensuales" ----------
-// 4 filas x 7 columnas (una columna por mes). Cada bloque se puede
-// prender/apagar con un clic, para visualizar cómo se iría "llenando"
-// la información mes a mes.
 const blockGrid = document.getElementById('blockGrid');
 const TOTAL_FILAS = 4;
 const TOTAL_COLUMNAS = 7;
 
 if (blockGrid) {
-for (let i = 0; i < TOTAL_FILAS * TOTAL_COLUMNAS; i++) {
-  const bloque = document.createElement('button');
-  bloque.type = 'button';
-  bloque.className = 'data-block';
-  // Arrancan con algunos bloques llenos, solo para que se vea parecido al mockup
-  if (Math.random() > 0.4) {
-    bloque.classList.add('filled');
+  for (let i = 0; i < TOTAL_FILAS * TOTAL_COLUMNAS; i++) {
+    const bloque = document.createElement('button');
+    bloque.type = 'button';
+    bloque.className = 'data-block';
+    if (Math.random() > 0.4) bloque.classList.add('filled');
+    bloque.addEventListener('click', () => bloque.classList.toggle('filled'));
+    blockGrid.appendChild(bloque);
   }
-  bloque.addEventListener('click', () => {
-    bloque.classList.toggle('filled');
-  });
-  blockGrid.appendChild(bloque);
-}
 }
 
-// ---------- Botón "Agregar" (dentro de la cuadrícula de bloques) ----------
 const agregarDatoBtn = document.getElementById('agregarDatoBtn');
-if (agregarDatoBtn) agregarDatoBtn.addEventListener('click', () => {
-  const nuevoBloque = document.createElement('button');
-  nuevoBloque.type = 'button';
-  nuevoBloque.className = 'data-block filled';
-  nuevoBloque.addEventListener('click', () => {
-    nuevoBloque.classList.toggle('filled');
+if (agregarDatoBtn) {
+  agregarDatoBtn.addEventListener('click', () => {
+    const nuevoBloque = document.createElement('button');
+    nuevoBloque.type = 'button';
+    nuevoBloque.className = 'data-block filled';
+    nuevoBloque.addEventListener('click', () => nuevoBloque.classList.toggle('filled'));
+    blockGrid.appendChild(nuevoBloque);
   });
-  blockGrid.appendChild(nuevoBloque);
-});
+}
 
-// ---------- Botón "Guardar" -> abre el modal de confirmación ----------
 const guardarBtn = document.getElementById('guardarBtn');
 const confirmModal = document.getElementById('confirmModal');
 const confirmarBtn = document.getElementById('confirmarBtn');
 const cancelarBtn = document.getElementById('cancelarBtn');
 
-guardarBtn.addEventListener('click', () => {
-  confirmModal.classList.add('active');
-});
+guardarBtn.addEventListener('click', () => confirmModal.classList.add('active'));
 
 confirmarBtn.addEventListener('click', () => {
   confirmModal.classList.remove('active');
-
-  // Reflejamos los contadores de "Lugares ocupados" en las cajas de
-  // arriba (Ocupado / Libre), para que se note el cambio al confirmar.
   document.getElementById('capacityOcupado').textContent = contadores.ocupados;
   document.getElementById('capacityLibre').textContent = Math.max(0, CAPACIDAD_TOTAL - contadores.ocupados);
 
   datosGanancias.valores = obtenerTotalesMensuales();
-  datosServicios.valores = ingresosPorServicio.map((servicio) => totalizarServicio(servicio));
   gananciasChart.data.datasets[0].data = datosGanancias.valores;
-  serviciosChart.data.datasets[0].data = datosServicios.valores;
   gananciasChart.update();
-  serviciosChart.update();
-  actualizarLeyendaServicios();
 
-  // Aquí es donde, en la versión real, harías el fetch/POST para
-  // guardar los cambios en tu base de datos.
-  alert('Datos guardados (esto es una simulación, aún falta conectar tu backend).');
+  alert('Datos guardados localmente (simulacion). Esto todavia no se guarda en la base de datos real.');
 });
 
-cancelarBtn.addEventListener('click', () => {
-  confirmModal.classList.remove('active');
-});
-
+cancelarBtn.addEventListener('click', () => confirmModal.classList.remove('active'));
 confirmModal.addEventListener('click', (evento) => {
-  if (evento.target === confirmModal) {
-    confirmModal.classList.remove('active');
-  }
+  if (evento.target === confirmModal) confirmModal.classList.remove('active');
 });
 
-// ---------- Tabla de ingresos por servicio y mes ----------
+// ---------- Tabla de ingresos por servicio y mes (simulacion local) ----------
 const ingresosPorServicio = [
-  { nombre: 'Hospedaje', valores: [1700, 2700, 2300, 1400, 3900, 3500, 2500] },
-  { nombre: 'Baño', valores: [900, 1500, 1300, 800, 2100, 1900, 1400] },
-  { nombre: 'Paseos', valores: [600, 1200, 1000, 600, 1200, 1100, 1000] },
+  { nombre: 'Hospedaje', valores: Array(12).fill(0) },
+  { nombre: 'Baño', valores: Array(12).fill(0) },
+  { nombre: 'Paseos', valores: Array(12).fill(0) },
 ];
 const incomeTableBody = document.getElementById('incomeTableBody');
 const incomeTableFoot = document.getElementById('incomeTableFoot');
-const formatoMoneda = new Intl.NumberFormat('es-MX', {
-  style: 'currency',
-  currency: 'MXN',
-  maximumFractionDigits: 0,
-});
+const formatoMoneda = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 });
 
 function totalizarServicio(servicio) {
   return servicio.valores.reduce((total, valor) => total + valor, 0);
 }
 
 function obtenerTotalesMensuales() {
-  return datosGanancias.meses.map((_, indiceMes) =>
-    ingresosPorServicio.reduce((total, servicio) => total + servicio.valores[indiceMes], 0)
+  return datosGanancias.meses.map((_, i) =>
+    ingresosPorServicio.reduce((total, servicio) => total + servicio.valores[i], 0)
   );
-}
-
-function actualizarLeyendaServicios() {
-  leyendaServicios.innerHTML = '';
-  datosServicios.etiquetas.forEach((texto, i) => {
-    const li = document.createElement('li');
-    li.innerHTML = `<span class="legend-dot" style="background:${coloresServicios[i]}"></span>${texto}: ${formatoMoneda.format(datosServicios.valores[i])}`;
-    leyendaServicios.appendChild(li);
-  });
 }
 
 function actualizarTotalesTabla() {
   const totales = obtenerTotalesMensuales();
-  ingresosPorServicio.forEach((servicio, indiceServicio) => {
-    document.querySelector(`[data-total-servicio="${indiceServicio}"]`).textContent = formatoMoneda.format(totalizarServicio(servicio));
+  ingresosPorServicio.forEach((servicio, i) => {
+    document.querySelector(`[data-total-servicio="${i}"]`).textContent = formatoMoneda.format(totalizarServicio(servicio));
   });
-  totales.forEach((total, indiceMes) => {
-    document.querySelector(`[data-total-mes="${indiceMes}"]`).textContent = formatoMoneda.format(total);
+  totales.forEach((total, i) => {
+    document.querySelector(`[data-total-mes="${i}"]`).textContent = formatoMoneda.format(total);
   });
-  document.getElementById('incomeGrandTotal').textContent = formatoMoneda.format(totales.reduce((total, valor) => total + valor, 0));
+  document.getElementById('incomeGrandTotal').textContent = formatoMoneda.format(totales.reduce((t, v) => t + v, 0));
 }
 
 function renderizarTablaIngresos() {
@@ -364,9 +344,9 @@ function renderizarTablaIngresos() {
 
   const filaTotal = document.createElement('tr');
   filaTotal.innerHTML = '<td>Total mensual</td>';
-  datosGanancias.meses.forEach((_, indiceMes) => {
+  datosGanancias.meses.forEach((_, i) => {
     const celda = document.createElement('td');
-    celda.dataset.totalMes = indiceMes;
+    celda.dataset.totalMes = i;
     filaTotal.appendChild(celda);
   });
   const totalGeneral = document.createElement('td');
@@ -377,3 +357,4 @@ function renderizarTablaIngresos() {
 }
 
 renderizarTablaIngresos();
+cargarDatosGraficas();

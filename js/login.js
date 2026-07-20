@@ -1,89 +1,77 @@
+
+// js/login.js
+const API_URL = 'http://107.22.53.32:8080';
+ 
 const form = document.getElementById('loginForm');
 const usernameInput = document.getElementById('username');
 const passwordInput = document.getElementById('password');
 const successModal = document.getElementById('successModal');
 const errorModal = document.getElementById('errorModal');
 const enterAppBtn = document.getElementById('enterAppBtn');
-
-const usuariosValidos = [
-  {
-    rol: 'administrador',
-    usuario: 'carlos',
-    contrasena: 'pr123',
-    destino: 'ganancias.html'
-  },
-  {
-    rol: 'usuario',
-    usuario: 'valeria',
-    contrasena: 'tnt123',
-    destino: 'usuarioreservaciones.html'
-  }
-];
-
+ 
 [usernameInput, passwordInput].forEach((input) => {
-  input.addEventListener('blur', () => {
-    input.classList.add('touched');
-  });
+  input.addEventListener('blur', () => input.classList.add('touched'));
 });
-
-form.addEventListener('submit', (event) => {
+ 
+form.addEventListener('submit', async (event) => {
   event.preventDefault();
-
+ 
   const usuario = usernameInput.value.trim();
   const contrasena = passwordInput.value.trim();
-
+ 
   usernameInput.classList.add('touched');
   passwordInput.classList.add('touched');
-
+ 
   if (!usuario || !contrasena) {
     mostrarModal(errorModal);
     return;
   }
-
-  const usuariosRegistrados = JSON.parse(localStorage.getItem('pawcareUsuarios') || '[]');
-  const credencialValida = [...usuariosValidos, ...usuariosRegistrados].find(
-    (credencial) =>
-      credencial.usuario === usuario && credencial.contrasena === contrasena
-  );
-
-  if (credencialValida) {
-    enterAppBtn.href = credencialValida.destino || 'usuarioreservaciones.html';
-    enterAppBtn.textContent = `Entrar como ${credencialValida.rol}`;
-    sessionStorage.setItem('usuarioRol', credencialValida.rol);
-    sessionStorage.setItem('usuarioNombre', credencialValida.usuario);
-    sessionStorage.setItem('usuarioPerfil', JSON.stringify(credencialValida));
+ 
+  try {
+    const respuesta = await fetch(`${API_URL}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usuario, contrasena }),
+    });
+ 
+    const datos = await respuesta.json();
+ 
+    if (!respuesta.ok || !datos.ok) {
+      mostrarModal(errorModal);
+      return;
+    }
+ 
+    // Guardamos los datos del usuario en sessionStorage para que otras
+    // páginas (ganancias.html, usuarioreservaciones.html, etc.) sepan
+    // quién inició sesión. Esto SÍ se sigue usando localStorage/sessionStorage
+    // — no para simular la base de datos, sino para recordar la sesión
+    // mientras navegas, que es su uso normal en cualquier sitio web.
+    sessionStorage.setItem('usuarioActual', JSON.stringify(datos.usuario));
+ 
+    enterAppBtn.textContent = `Entrar como ${datos.usuario.rol}`;
+    enterAppBtn.href = datos.usuario.rol === 'administrador' ? 'ganancias.html' : 'usuarioreservaciones.html';
+ 
     mostrarModal(successModal);
-  } else {
+  } catch (error) {
+    console.error('Error al conectar con la API:', error);
     mostrarModal(errorModal);
   }
 });
-
+ 
 function mostrarModal(modal) {
   modal.classList.add('active');
 }
-
+ 
 function ocultarModal(modal) {
   modal.classList.remove('active');
 }
-
+ 
 [successModal, errorModal].forEach((modal) => {
   modal.addEventListener('click', (event) => {
-    if (event.target === modal) {
-      ocultarModal(modal);
-    }
+    if (event.target === modal) ocultarModal(modal);
   });
 });
-
-const retryBtn = document.getElementById('retryBtn');
-retryBtn.addEventListener('click', () => {
-  ocultarModal(errorModal);
-  usernameInput.value = '';
-  passwordInput.value = '';
-  usernameInput.classList.remove('touched');
-  passwordInput.classList.remove('touched');
-  usernameInput.focus();
-});
-
+ 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
     ocultarModal(successModal);

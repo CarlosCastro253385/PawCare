@@ -122,6 +122,15 @@
                                     <span class="icono-editar">&#9998;</span>
                                 </div>
                             </div>
+
+                            <!-- Agrega este bloque justo antes de "form-acciones", después del campo Raza -->
+    <div class="form-grupo" style="margin-top:14px;">
+        <label>Servicios solicitados:</label>
+        <div id="serviciosCheckboxes" class="servicios-checkboxes">
+            <!-- Los checkboxes se generan solos con JavaScript, desde tu API -->
+        </div>
+    </div>
+                    
                             <div class="form-acciones">
                                 <button type="button" id="btnCancelar" class="btn-secundario">Cancelar</button>
                                 <button type="submit" class="btn-primario">Guardar reservacion</button>
@@ -149,8 +158,7 @@
         </div>
     </div>
 
-    <!-- Carga del archivo JavaScript externo -->
+<!-- Carga del archivo JavaScript externo -->
+    <script src="js/config.js"></script>
     <script src="js/sidebar-common.js"></script>
     <script src="js/reservaciones.js"></script>
-</body>
-</html>

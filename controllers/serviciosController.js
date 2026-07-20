@@ -59,6 +59,12 @@ async function eliminarServicio(req, res) {
     await pool.query('DELETE FROM SERVICIO WHERE id_servicio = ?', [id]);
     return res.json({ ok: true });
   } catch (error) {
+    if (error.code === 'ER_ROW_IS_REFERENCED_2') {
+      return res.status(409).json({
+        ok: false,
+        mensaje: 'No se puede eliminar: este servicio ya está asociado a una o más citas.',
+      });
+    }
     console.error('Error al eliminar servicio:', error);
     return res.status(500).json({ ok: false, mensaje: 'Error del servidor.' });
   }

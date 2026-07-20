@@ -2,10 +2,10 @@
 const pool = require('../config/db');
 
 // GET /api/mascotas
-// Uso admin: trae todas. Para el lado del cliente, usa
-// GET /api/mascotas?id_cliente=5 para traer solo las suyas.
+// Uso admin: trae todas. Con ?id_cliente=5 filtra por cliente.
+// Con ?id_usuario=3 filtra por la cuenta de usuario ligada a ese cliente.
 async function obtenerMascotas(req, res) {
-  const { id_cliente } = req.query;
+  const { id_cliente, id_usuario } = req.query;
 
   try {
     let consulta = `
@@ -18,6 +18,9 @@ async function obtenerMascotas(req, res) {
     if (id_cliente) {
       consulta += ' WHERE m.id_cliente = ?';
       parametros.push(id_cliente);
+    } else if (id_usuario) {
+      consulta += ' WHERE c.id_usuario = ?';
+      parametros.push(id_usuario);
     }
 
     const [mascotas] = await pool.query(consulta, parametros);
@@ -57,8 +60,6 @@ async function obtenerMascotaPorId(req, res) {
 }
 
 // POST /api/mascotas
-// Espera: { nombre, genero, edad, raza, foto, indicaciones, id_cliente }
-// Si el cliente (dueño) no existe todavía, lo crea de paso.
 async function crearMascota(req, res) {
   const { nombre, genero, edad, raza, foto, indicaciones, id_cliente, nombreCliente, telefonoCliente } = req.body;
 
@@ -72,7 +73,6 @@ async function crearMascota(req, res) {
 
     let idClienteFinal = id_cliente;
 
-    // Si no mandaron un id_cliente existente, buscamos o creamos uno por teléfono
     if (!idClienteFinal && telefonoCliente) {
       const [existentes] = await conexion.query('SELECT id_cliente FROM CLIENTE WHERE contacto = ?', [telefonoCliente]);
       if (existentes.length > 0) {
@@ -127,8 +127,6 @@ async function actualizarMascota(req, res) {
 }
 
 // PUT /api/mascotas/:id/prescripcion
-// Espera: { medicamento, via, dias, cada_horas }
-// Si ya existe una prescripción para esa mascota, la actualiza; si no, la crea.
 async function guardarPrescripcion(req, res) {
   const { id } = req.params;
   const { medicamento, via, dias, cada_horas } = req.body;

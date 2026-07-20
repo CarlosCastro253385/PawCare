@@ -1,7 +1,4 @@
-// PAWCARE/js/reservas.js
-
 document.addEventListener('DOMContentLoaded', () => {
-    // --- VISTAS ---
     const vistaCalendario = document.getElementById('vistaCalendario');
     const vistaFormulario = document.getElementById('vistaFormulario');
     const btnAgregar = document.getElementById('btnAgregar');
@@ -12,67 +9,84 @@ document.addEventListener('DOMContentLoaded', () => {
     const mesReserva = document.getElementById('mesReserva');
     const mesAnterior = document.getElementById('mesAnterior');
     const mesSiguiente = document.getElementById('mesSiguiente');
+    const serviciosCheckboxes = document.getElementById('serviciosCheckboxes');
 
-    // --- MODALES (PANTALLAS EMERGENTES) ---
     const modalExito = document.getElementById('modalExito');
     const modalError = document.getElementById('modalError');
     const btnCerrarExito = document.getElementById('btnCerrarExito');
     const btnCerrarError = document.getElementById('btnCerrarError');
 
-    // Cambia entre la vista de calendario y la de formulario
+    const sesion = JSON.parse(sessionStorage.getItem('usuarioActual') || '{}');
+
+    // Precargamos y bloqueamos nombre/teléfono: son los del cliente en sesión
+    const nombreInput = document.getElementById('nombreCliente');
+    const telefonoInput = document.getElementById('telefonoCliente');
+    if (nombreInput) { nombreInput.value = sesion.nombre || ''; nombreInput.disabled = true; }
+    if (telefonoInput) { telefonoInput.value = sesion.telefono || ''; telefonoInput.disabled = true; }
+
     function mostrarVista(vista) {
         [vistaCalendario, vistaFormulario].forEach(v => v.classList.remove('activa'));
         vista.classList.add('activa');
     }
 
-    if(btnAgregar) {
-        btnAgregar.addEventListener('click', () => mostrarVista(vistaFormulario));
+    function mostrarError(mensaje) {
+        const texto = modalError ? modalError.querySelector('p') : null;
+        if (texto && mensaje) texto.textContent = mensaje;
+        if (modalError) modalError.classList.add('mostrar');
     }
-    
-    if(btnCancelar) {
+
+    if (btnAgregar) btnAgregar.addEventListener('click', () => mostrarVista(vistaFormulario));
+    if (btnCancelar) {
         btnCancelar.addEventListener('click', () => {
             formReserva.reset();
             mostrarVista(vistaCalendario);
         });
     }
 
-    // --- GENERAR CALENDARIO ---
     const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     const anioActual = new Date().getFullYear();
     let indiceMes = meses.indexOf(mesReserva.value);
+    let diasOcupados = new Set();
 
-    function obtenerDiasEnMes() {
-        return new Date(anioActual, indiceMes + 1, 0).getDate();
+    function obtenerDiasEnMes() { return new Date(anioActual, indiceMes + 1, 0).getDate(); }
+    function obtenerPrimerDiaOffset() { return (new Date(anioActual, indiceMes, 1).getDay() + 6) % 7; }
+    function diaAFechaISO(dia) {
+        return `${anioActual}-${String(indiceMes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
     }
 
-    function obtenerPrimerDiaOffset() {
-        const diaSemana = new Date(anioActual, indiceMes, 1).getDay();
-        return (diaSemana + 6) % 7;
+    async function cargarReservasDelMes() {
+        try {
+            // Filtrado por el cliente en sesión: solo ve sus propias reservas
+            const respuesta = await apiFetch(`/citas?mes=${indiceMes + 1}&anio=${anioActual}&id_cliente=${sesion.id_cliente}`, { method: 'GET' });
+            diasOcupados = new Set();
+            (respuesta.citas || []).forEach(cita => {
+                const inicio = new Date(cita.fecha_entrada).getDate();
+                const fin = new Date(cita.fecha_salida).getDate();
+                for (let d = inicio; d <= fin; d++) diasOcupados.add(d);
+            });
+        } catch (err) {
+            console.warn('No se pudieron cargar tus reservaciones:', err.message);
+            diasOcupados = new Set();
+        }
     }
 
     function generarCalendario() {
         if (!diasGrid) return;
         diasGrid.innerHTML = '';
-        
-        // Celdas vacías de desfase
         for (let i = 0; i < obtenerPrimerDiaOffset(); i++) {
             const vacio = document.createElement('div');
             vacio.className = 'dia dia--vacio';
             diasGrid.appendChild(vacio);
         }
-        
-        // Días activos
         for (let dia = 1; dia <= obtenerDiasEnMes(); dia++) {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'dia';
             btn.textContent = dia;
-            
-            // Simular el día 8 seleccionado del diseño de Figma
-            if (dia === 8) {
-                btn.classList.add('dia--seleccionado');
+            if (diasOcupados.has(dia)) {
+                btn.classList.add('dia--ocupado');
+                btn.title = 'Ya tienes una reservación en esta fecha';
             }
-            
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.dia').forEach(d => d.classList.remove('dia--seleccionado'));
                 btn.classList.add('dia--seleccionado');
@@ -81,11 +95,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- LLENAR SELECTS DE FECHAS ---
     function llenarSelectFechas(id) {
         const select = document.getElementById(id);
         if (!select) return;
-        // Limpiar opciones previas exceptuando la primera por defecto
         select.innerHTML = '<option value="">Selecciona</option>';
         for (let dia = 1; dia <= obtenerDiasEnMes(); dia++) {
             const option = document.createElement('option');
@@ -95,75 +107,82 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    generarCalendario();
-    llenarSelectFechas('fechaIngreso');
-    llenarSelectFechas('fechaSalida');
-
-    // Sincronizar select de mes con el título del calendario
-    if (mesReserva && mesNombre) {
-        mesReserva.addEventListener('change', () => {
-            indiceMes = meses.indexOf(mesReserva.value);
-            actualizarCalendario();
-        });
+    async function cargarServiciosDisponibles() {
+        if (!serviciosCheckboxes) return;
+        try {
+            const respuesta = await apiFetch('/servicios', { method: 'GET' });
+            serviciosCheckboxes.innerHTML = (respuesta.servicios || []).map(srv => `
+                <label class="checkbox-servicio">
+                    <input type="checkbox" name="servicio" value="${srv.id_servicio}">
+                    ${srv.nombre}
+                </label>
+            `).join('');
+        } catch (err) {
+            serviciosCheckboxes.innerHTML = '<p style="color:#888;">No se pudieron cargar los servicios disponibles.</p>';
+        }
     }
 
-    function actualizarCalendario() {
+    async function actualizarCalendario() {
         mesNombre.textContent = meses[indiceMes];
         mesReserva.value = meses[indiceMes];
+        await cargarReservasDelMes();
         generarCalendario();
         llenarSelectFechas('fechaIngreso');
         llenarSelectFechas('fechaSalida');
     }
 
-    if (mesAnterior) {
-        mesAnterior.addEventListener('click', () => {
-            indiceMes = (indiceMes + 11) % meses.length;
-            actualizarCalendario();
-        });
+    if (mesReserva && mesNombre) {
+        mesReserva.addEventListener('change', () => { indiceMes = meses.indexOf(mesReserva.value); actualizarCalendario(); });
     }
+    if (mesAnterior) mesAnterior.addEventListener('click', () => { indiceMes = (indiceMes + 11) % meses.length; actualizarCalendario(); });
+    if (mesSiguiente) mesSiguiente.addEventListener('click', () => { indiceMes = (indiceMes + 1) % meses.length; actualizarCalendario(); });
 
-    if (mesSiguiente) {
-        mesSiguiente.addEventListener('click', () => {
-            indiceMes = (indiceMes + 1) % meses.length;
-            actualizarCalendario();
-        });
-    }
+    actualizarCalendario();
+    cargarServiciosDisponibles();
 
-    // --- ENVÍO Y VALIDACIÓN DEL FORMULARIO + MODALES ---
     if (formReserva) {
-        formReserva.addEventListener('submit', (e) => {
+        formReserva.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const diaIngreso = parseInt(document.getElementById('fechaIngreso').value);
+            const diaSalida = parseInt(document.getElementById('fechaSalida').value);
 
-            const fechaIngreso = parseInt(document.getElementById('fechaIngreso').value);
-            const fechaSalida = parseInt(document.getElementById('fechaSalida').value);
-
-            // Validación lógica básica: No puedes salir antes de ingresar
-            if (fechaSalida < fechaIngreso) {
-                // Mostrar pantalla emergente de error
-                modalError.classList.add('mostrar');
+            if (diaSalida < diaIngreso) {
+                mostrarError('La fecha de salida no puede ser antes que la fecha de ingreso.');
                 return;
             }
 
-            // Captura de datos estructurada
+            const serviciosSeleccionados = Array.from(
+                document.querySelectorAll('input[name="servicio"]:checked')
+            ).map(chk => Number(chk.value));
+
             const datos = {
-                mes: document.getElementById('mesReserva').value,
-                fechaIngreso: fechaIngreso,
-                fechaSalida: fechaSalida,
-                nombreCliente: document.getElementById('nombreCliente').value,
-                telefonoCliente: document.getElementById('telefonoCliente').value,
+                fechaEntrada: diaAFechaISO(diaIngreso),
+                fechaSalida: diaAFechaISO(diaSalida),
+                nombreCliente: sesion.nombre,
+                telefonoCliente: sesion.telefono,
                 nombreMascota: document.getElementById('nombreMascota').value,
                 edadMascota: document.getElementById('edadMascota').value,
-                razaMascota: document.getElementById('razaMascota').value
+                razaMascota: document.getElementById('razaMascota').value,
+                id_usuario: null, // esta reserva la hace el cliente mismo, no un empleado
+                servicios: serviciosSeleccionados
             };
 
-            console.log('Simulación API - Nueva reservación exitosa:', datos);
-            
-            // Mostrar pantalla emergente de éxito
-            modalExito.classList.add('mostrar');
+            const btnGuardar = formReserva.querySelector('button[type="submit"]');
+            if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = 'Guardando...'; }
+
+            try {
+                await apiFetch('/citas', { method: 'POST', body: JSON.stringify(datos) });
+                if (modalExito) modalExito.classList.add('mostrar');
+                await cargarReservasDelMes();
+                generarCalendario();
+            } catch (err) {
+                mostrarError(err.message || 'No se pudo guardar la reservación. Intenta de nuevo.');
+            } finally {
+                if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = 'Guardar reservación'; }
+            }
         });
     }
 
-    // --- MANEJO DE CIERRE DE PANTALLAS EMERGENTES ---
     if (btnCerrarExito) {
         btnCerrarExito.addEventListener('click', () => {
             modalExito.classList.remove('mostrar');
@@ -171,10 +190,5 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarVista(vistaCalendario);
         });
     }
-
-    if (btnCerrarError) {
-        btnCerrarError.addEventListener('click', () => {
-            modalError.classList.remove('mostrar');
-        });
-    }
+    if (btnCerrarError) btnCerrarError.addEventListener('click', () => modalError.classList.remove('mostrar'));
 });
