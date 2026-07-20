@@ -2,7 +2,6 @@
 const pool = require('../config/db');
 
 // GET /api/ganancias/espacio
-// Cuenta cuántas mascotas tienen una CITA activa hoy vs la capacidad total.
 async function obtenerEspacio(req, res) {
   try {
     const [config] = await pool.query('SELECT capacidad_total FROM LANDING_PAGE LIMIT 1');
@@ -15,7 +14,7 @@ async function obtenerEspacio(req, res) {
          AND estado != 'cancelada'`
     );
 
-    const ocupado = ocupadosHoy[0].ocupados;
+    const ocupado = ocupadosHoy[0]?.ocupados || 0;
     const libre = Math.max(0, capacidadTotal - ocupado);
 
     return res.json({ ok: true, capacidadTotal, ocupado, libre });
@@ -26,7 +25,6 @@ async function obtenerEspacio(req, res) {
 }
 
 // PUT /api/ganancias/capacidad
-// Actualiza la capacidad total desde la sección "Editar datos"
 async function actualizarCapacidad(req, res) {
   const { capacidadTotal } = req.body;
 
@@ -44,7 +42,6 @@ async function actualizarCapacidad(req, res) {
 }
 
 // GET /api/ganancias/mensuales?anio=2026
-// Suma TODO lo registrado en la tabla PAGO por mes (Citas + Manuales).
 async function obtenerGananciasMensuales(req, res) {
   const anio = req.query.anio || new Date().getFullYear();
 
@@ -71,13 +68,11 @@ async function obtenerGananciasMensuales(req, res) {
 }
 
 // GET /api/ganancias/por-servicio?anio=2026
-// Combina y suma los ingresos de citas y los ingresos manuales por su respectivo servicio.
 async function obtenerIngresosPorServicio(req, res) {
   const anio = req.query.anio || new Date().getFullYear();
 
   try {
-    // Consulta para obtener los ingresos vinculados a servicios reales en citas
-    const [ingresosCitas] = await pool.query(
+    const [filas] = await pool.query(
       `SELECT s.nombre, SUM(p.monto_pagado / conteo.total_servicios) AS total
        FROM PAGO p
        JOIN CITA_SERVICIO cs ON p.id_cita = cs.id_cita
@@ -92,34 +87,10 @@ async function obtenerIngresosPorServicio(req, res) {
       [anio]
     );
 
-    // Consulta para obtener los ingresos manuales guardados desde tu tabla
-    const [ingresosManuales] = await pool.query(
-      `SELECT SUBSTRING_INDEX(metodo_pago, ' - ', -1) AS nombre, SUM(monto_pagado) AS total
-       FROM PAGO
-       WHERE YEAR(fecha_pago) = ? AND metodo_pago LIKE 'Manual - %'
-       GROUP BY metodo_pago`,
-      [anio]
-    );
-
-    // Mapeamos y unificamos ambos resultados en un solo mapa para no duplicar servicios
-    const mapaServicios = {};
-
-    ingresosCitas.forEach(f => {
-      mapaServicios[f.nombre] = Number(f.total);
-    });
-
-    ingresosManuales.forEach(f => {
-      if (mapaServicios[f.nombre]) {
-        mapaServicios[f.nombre] += Number(f.total);
-      } else {
-        mapaServicios[f.nombre] = Number(f.total);
-      }
-    });
-
     return res.json({
       ok: true,
-      etiquetas: Object.keys(mapaServicios),
-      valores: Object.values(mapaServicios),
+      etiquetas: filas.map((f) => f.nombre),
+      valores: filas.map((f) => Number(f.total)),
     });
   } catch (error) {
     console.error('Error al calcular ingresos por servicio:', error);
@@ -128,10 +99,9 @@ async function obtenerIngresosPorServicio(req, res) {
 }
 
 // POST /api/ganancias/registrar-ingresos-manuales
-// Inserta o actualiza los ingresos manuales por mes para que no se dupliquen registros
 async function registrarIngresosManuales(req, res) {
-  const { ingresos } = req.body; 
-  
+  const { ingresos } = req.body;
+
   if (!ingresos || !Array.isArray(ingresos)) {
     return res.status(400).json({ ok: false, mensaje: 'Datos inválidos.' });
   }
@@ -142,50 +112,61 @@ async function registrarIngresosManuales(req, res) {
 
     const anioActual = 2026;
 
+    // 1. Buscamos una cita existente para cumplir con la llave foránea id_cita e id_cliente
+    const [citasExistentes] = await conexion.query('SELECT id_cita, id_cliente FROM CITA LIMIT 1');
+
+    if (citasExistentes.length === 0) {
+      await conexion.rollback();
+      return res.status(400).json({
+        ok: false,
+        mensaje: 'Debes registrar al menos una Cita en la base de datos antes de registrar ingresos manuales.'
+      });
+    }
+
+    const { id_cita, id_cliente } = citasExistentes[0];
+
     for (const item of ingresos) {
       const mesFormateado = String(item.mes + 1).padStart(2, '0');
       const fechaSimulada = `${anioActual}-${mesFormateado}-01`;
-      const identificadorManual = `Manual - ${item.servicio}`;
 
-      // Verificamos si ya existe un registro manual de ese servicio para ese mes exacto
+      // Buscamos si ya existe un registro manual de pago en esa fecha exacta
       const [existe] = await conexion.query(
         `SELECT id_pago FROM PAGO 
-         WHERE metodo_pago = ? AND MONTH(fecha_pago) = ? AND YEAR(fecha_pago) = ? LIMIT 1`,
-        [identificadorManual, item.mes + 1, anioActual]
+         WHERE MONTH(fecha_pago) = ? AND YEAR(fecha_pago) = ? AND id_cita = ? LIMIT 1`,
+        [item.mes + 1, anioActual, id_cita]
       );
 
       if (existe.length > 0) {
-        // Si ya existe, sobreescribimos el monto
+        // Actualizamos el monto existente
         await conexion.query(
           `UPDATE PAGO SET monto_pagado = ? WHERE id_pago = ?`,
           [item.total, existe[0].id_pago]
         );
       } else if (item.total > 0) {
-        // Si es nuevo y tiene valor, lo insertamos
+        // Insertamos enviando id_cita e id_cliente obligatorios de tu esquema
         await conexion.query(
-          `INSERT INTO PAGO (monto_pagado, fecha_pago, metodo_pago) 
-           VALUES (?, ?, ?)`,
-          [item.total, fechaSimulada, identificadorManual]
+          `INSERT INTO PAGO (monto_pagado, monto_por_pagar, fecha_pago, id_cita, id_cliente) 
+           VALUES (?, 0, ?, ?, ?)`,
+          [item.total, fechaSimulada, id_cita, id_cliente]
         );
       }
     }
 
     await conexion.commit();
-    return res.json({ ok: true, mensaje: 'Ingresos manuales guardados perfectamente.' });
+    return res.json({ ok: true, mensaje: 'Ingresos guardados correctamente.' });
   } catch (error) {
     await conexion.rollback();
-    console.error('Error al registrar ingresos manuales:', error);
-    return res.status(500).json({ ok: false, mensaje: 'Error del servidor.' });
+    console.error('Error detallado SQL al registrar ingresos:', error);
+    return res.status(500).json({ ok: false, mensaje: 'Error interno del servidor.' });
   } finally {
     conexion.release();
   }
 }
 
-// Exportamos absolutamente todas las funciones necesarias
-module.exports = { 
-  obtenerEspacio, 
+module.exports = {
+  obtenerEspacio,
   actualizarCapacidad,
-  obtenerGananciasMensuales, 
-  obtenerIngresosPorServicio, 
-  registrarIngresosManuales 
+  obtenerGananciasMensuales,
+  obtenerIngresosPorServicio,
+  registrarIngresosManuales,
 };
