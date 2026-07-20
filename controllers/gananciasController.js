@@ -100,36 +100,51 @@ async function obtenerIngresosPorServicio(req, res) {
 
 // POST /api/ganancias/registrar-ingresos-manuales
 async function registrarIngresosManuales(req, res) {
-  const { ingresos } = req.body;
+  const { ingresos, capacidadTotal } = req.body;
 
   if (!ingresos || !Array.isArray(ingresos)) {
-    return res.status(400).json({ ok: false, mensaje: 'Datos inválidos.' });
+    return res.status(400).json({ ok: false, mensaje: 'Datos de ingresos inválidos.' });
   }
 
   const conexion = await pool.getConnection();
   try {
     await conexion.beginTransaction();
 
+    // 1. Guardar o actualizar capacidad_total en LANDING_PAGE si viene en la petición
+    if (capacidadTotal !== undefined && capacidadTotal >= 0) {
+      const [existePagina] = await conexion.query('SELECT id_pagina FROM LANDING_PAGE LIMIT 1');
+      if (existePagina.length > 0) {
+        await conexion.query('UPDATE LANDING_PAGE SET capacidad_total = ? WHERE id_pagina = ?', [
+          capacidadTotal,
+          existePagina[0].id_pagina,
+        ]);
+      } else {
+        await conexion.query('INSERT INTO LANDING_PAGE (capacidad_total, titulo) VALUES (?, "PawCARE")', [
+          capacidadTotal,
+        ]);
+      }
+    }
+
     const anioActual = 2026;
 
-    // 1. Buscamos una cita existente para cumplir con la llave foránea id_cita e id_cliente
+    // 2. Buscar una cita existente para cumplir con la llave foránea id_cita e id_cliente
     const [citasExistentes] = await conexion.query('SELECT id_cita, id_cliente FROM CITA LIMIT 1');
 
     if (citasExistentes.length === 0) {
       await conexion.rollback();
       return res.status(400).json({
         ok: false,
-        mensaje: 'Debes registrar al menos una Cita en la base de datos antes de registrar ingresos manuales.'
+        mensaje: 'Debes registrar al menos una Cita en la base de datos antes de registrar ingresos manuales.',
       });
     }
 
     const { id_cita, id_cliente } = citasExistentes[0];
 
+    // 3. Insertar o actualizar cada mes en la tabla PAGO
     for (const item of ingresos) {
       const mesFormateado = String(item.mes + 1).padStart(2, '0');
       const fechaSimulada = `${anioActual}-${mesFormateado}-01`;
 
-      // Buscamos si ya existe un registro manual de pago en esa fecha exacta
       const [existe] = await conexion.query(
         `SELECT id_pago FROM PAGO 
          WHERE MONTH(fecha_pago) = ? AND YEAR(fecha_pago) = ? AND id_cita = ? LIMIT 1`,
@@ -137,13 +152,11 @@ async function registrarIngresosManuales(req, res) {
       );
 
       if (existe.length > 0) {
-        // Actualizamos el monto existente
-        await conexion.query(
-          `UPDATE PAGO SET monto_pagado = ? WHERE id_pago = ?`,
-          [item.total, existe[0].id_pago]
-        );
+        await conexion.query(`UPDATE PAGO SET monto_pagado = ? WHERE id_pago = ?`, [
+          item.total,
+          existe[0].id_pago,
+        ]);
       } else if (item.total > 0) {
-        // Insertamos enviando id_cita e id_cliente obligatorios de tu esquema
         await conexion.query(
           `INSERT INTO PAGO (monto_pagado, monto_por_pagar, fecha_pago, id_cita, id_cliente) 
            VALUES (?, 0, ?, ?, ?)`,
@@ -153,7 +166,7 @@ async function registrarIngresosManuales(req, res) {
     }
 
     await conexion.commit();
-    return res.json({ ok: true, mensaje: 'Ingresos guardados correctamente.' });
+    return res.json({ ok: true, mensaje: 'Ingresos y capacidad guardados correctamente.' });
   } catch (error) {
     await conexion.rollback();
     console.error('Error detallado SQL al registrar ingresos:', error);
