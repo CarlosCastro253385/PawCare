@@ -235,6 +235,19 @@ body {
     border-color: #52a3ff !important;
 }
 
+/* Color para los días ocupados por el usuario */
+.dia.dia--ocupado {
+    background-color: #e2e8f0 !important; /* Un gris suave premium */
+    color: #64748b !important;            /* Texto más oscuro para contraste */
+    border: 2px dashed #cbd5e1 !important; /* Borde discontinuo elegante */
+    cursor: not-allowed;
+}
+
+/* Si quieres que resalte aún más cuando pase el cursor */
+.dia.dia--ocupado:hover {
+    background-color: #cbd5e1 !important;
+    color: #334155 !important;
+}
 /* ==========================================================================
    FORMULARIO DE RESERVA
    ========================================================================== */

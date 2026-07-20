@@ -1,10 +1,43 @@
 document.addEventListener('DOMContentLoaded', () => {
+    if (typeof apiFetch === 'undefined') {
+        window.apiFetch = async function(endpoint, opciones = {}) {
+            const URL_BASE = 'http://107.22.53.32:8080/api'; 
+            const urlCompleta = `${URL_BASE}${endpoint}`;
+            
+            opciones.headers = {
+                'Content-Type': 'application/json',
+                ...opciones.headers
+            };
+
+            const respuesta = await fetch(urlCompleta, opciones);
+            
+            if (!respuesta.ok) {
+                const errorData = await respuesta.json().catch(() => ({}));
+                throw new Error(errorData.message || `Error en el servidor: ${respuesta.status}`);
+            }
+
+            return await respuesta.json();
+        };
+    }
+
     const vistaCalendario = document.getElementById('vistaCalendario');
     const vistaFormulario = document.getElementById('vistaFormulario');
     const btnAgregar = document.getElementById('btnAgregar');
     const btnCancelar = document.getElementById('btnCancelar');
     const diasGrid = document.getElementById('diasGrid');
     const formReserva = document.getElementById('formReserva');
+    
+    // Habilitar la edición de campos dinámicamente
+    const camposFormulario = ['nombreCliente', 'telefonoCliente', 'nombreMascota', 'edadMascota', 'razaMascota'];
+    camposFormulario.forEach(id => {
+        const campo = document.getElementById(id);
+        if (campo) {
+            campo.removeAttribute('disabled');
+            campo.removeAttribute('readonly');
+            campo.style.pointerEvents = 'auto'; 
+        }
+    });
+
     const mesNombre = document.getElementById('mesNombre');
     const mesReserva = document.getElementById('mesReserva');
     const mesAnterior = document.getElementById('mesAnterior');
@@ -18,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const sesion = JSON.parse(sessionStorage.getItem('usuarioActual') || '{}');
 
-    // Precargamos y bloqueamos nombre/teléfono: son los del cliente en sesión
+    // Precargamos los datos del cliente en sesión
     const nombreInput = document.getElementById('nombreCliente');
     const telefonoInput = document.getElementById('telefonoCliente');
     if (nombreInput) { nombreInput.value = sesion.nombre || ''; nombreInput.disabled = true; }
@@ -54,19 +87,50 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${anioActual}-${String(indiceMes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
     }
 
+let citasDelMesDetalle = []; // Variable global para guardar los textos de búsqueda
+
     async function cargarReservasDelMes() {
         try {
-            // Filtrado por el cliente en sesión: solo ve sus propias reservas
-            const respuesta = await apiFetch(`/citas?mes=${indiceMes + 1}&anio=${anioActual}&id_cliente=${sesion.id_cliente}`, { method: 'GET' });
+            const idUsuario = sesion.id_usuario || null;
+            if (!idUsuario) {
+                console.warn('No se encontró un usuario con sesión activa.');
+                return;
+            }
+
+            const respuesta = await apiFetch(`/citas?mes=${indiceMes + 1}&anio=${anioActual}&id_usuario=${idUsuario}`, { method: 'GET' });
+            
             diasOcupados = new Set();
-            (respuesta.citas || []).forEach(cita => {
-                const inicio = new Date(cita.fecha_entrada).getDate();
-                const fin = new Date(cita.fecha_salida).getDate();
-                for (let d = inicio; d <= fin; d++) diasOcupados.add(d);
+            citasDelMesDetalle = []; // Limpiamos en cada cambio de mes
+            const listaCitas = respuesta.citas || respuesta; 
+            if (!Array.isArray(listaCitas)) return;
+
+            listaCitas.forEach(cita => {
+                const fEntrada = cita.fecha_entrada || cita.fechaEntrada || cita.fecha_ingreso;
+                const fSalida = cita.fecha_salida || cita.fechaSalida;
+
+                if (fEntrada && fSalida) {
+                    const fechaEntradaLimpia = fEntrada.includes('T') ? fEntrada.split('T')[0] : fEntrada;
+                    const fechaSalidaLimpia = fSalida.includes('T') ? fSalida.split('T')[0] : fSalida;
+
+                    const diaInicio = parseInt(fechaEntradaLimpia.split('-')[2]);
+                    const diaFin = parseInt(fechaSalidaLimpia.split('-')[2]);
+
+                    if (!isNaN(diaInicio) && !isNaN(diaFin)) {
+                        for (let d = diaInicio; d <= diaFin; d++) {
+                            diasOcupados.add(d);
+                            // Guardamos los datos clave de la cita asociados a este día
+                            citasDelMesDetalle.push({
+                                dia: d,
+                                textoBuscar: `${cita.nombre_mascota || ''} ${cita.nombre_cliente || ''} ${cita.estado || ''}`.toLowerCase()
+                            });
+                        }
+                    }
+                }
             });
         } catch (err) {
-            console.warn('No se pudieron cargar tus reservaciones:', err.message);
+            console.warn('No se pudieron cargar las reservaciones del usuario:', err.message);
             diasOcupados = new Set();
+            citasDelMesDetalle = [];
         }
     }
 
@@ -83,10 +147,15 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.type = 'button';
             btn.className = 'dia';
             btn.textContent = dia;
+            
             if (diasOcupados.has(dia)) {
                 btn.classList.add('dia--ocupado');
-                btn.title = 'Ya tienes una reservación en esta fecha';
+                // Buscamos los detalles guardados para asignárselos al botón
+                const infoCita = citasDelMesDetalle.find(c => c.dia === dia);
+                btn.dataset.info = infoCita ? infoCita.textoBuscar : 'ocupado';
+                btn.title = infoCita ? `Mascota: ${infoCita.textoBuscar.split(' ')[0]}` : 'Ocupado';
             }
+            
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.dia').forEach(d => d.classList.remove('dia--seleccionado'));
                 btn.classList.add('dia--seleccionado');
@@ -98,12 +167,18 @@ document.addEventListener('DOMContentLoaded', () => {
     function llenarSelectFechas(id) {
         const select = document.getElementById(id);
         if (!select) return;
+        
+        const valorPrevio = select.value; 
         select.innerHTML = '<option value="">Selecciona</option>';
         for (let dia = 1; dia <= obtenerDiasEnMes(); dia++) {
             const option = document.createElement('option');
             option.value = dia;
             option.textContent = dia;
             select.appendChild(option);
+        }
+        
+        if (valorPrevio && valorPrevio <= obtenerDiasEnMes()) {
+            select.value = valorPrevio;
         }
     }
 
@@ -120,6 +195,35 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             serviciosCheckboxes.innerHTML = '<p style="color:#888;">No se pudieron cargar los servicios disponibles.</p>';
         }
+    }
+
+ // ---------- BUSCADOR LOCAL REAL CORREGIDO ----------
+    const inputBuscar = document.querySelector('input[placeholder="Buscar reservacion..."]');
+    if (inputBuscar) {
+        inputBuscar.addEventListener('input', async (e) => {
+            const termino = e.target.value.trim().toLowerCase();
+            
+            // Si el buscador se limpia, restauramos todo el mes original
+            if (termino === '') {
+                await actualizarCalendario();
+                return;
+            }
+
+            const botonesDias = document.querySelectorAll('.dia:not(.dia--vacio)');
+            botonesDias.forEach(btn => {
+                const info = btn.dataset.info || '';
+                // Si la celda no incluye lo que el usuario está escribiendo, la ocultamos/despintamos visualmente
+                if (info !== '') {
+                    if (!info.includes(termino)) {
+                        btn.classList.remove('dia--ocupado'); 
+                        btn.style.opacity = '0.3'; // Se vuelve semitransparente para denotar que no coincide
+                    } else {
+                        btn.classList.add('dia--ocupado');
+                        btn.style.opacity = '1'; // Resalta la que sí coincide
+                    }
+                }
+            });
+        });
     }
 
     async function actualizarCalendario() {
@@ -146,6 +250,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const diaIngreso = parseInt(document.getElementById('fechaIngreso').value);
             const diaSalida = parseInt(document.getElementById('fechaSalida').value);
 
+            if (!diaIngreso || !diaSalida) {
+                mostrarError('Por favor selecciona las fechas de ingreso y salida.');
+                return;
+            }
+
             if (diaSalida < diaIngreso) {
                 mostrarError('La fecha de salida no puede ser antes que la fecha de ingreso.');
                 return;
@@ -163,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 nombreMascota: document.getElementById('nombreMascota').value,
                 edadMascota: document.getElementById('edadMascota').value,
                 razaMascota: document.getElementById('razaMascota').value,
-                id_usuario: null, // esta reserva la hace el cliente mismo, no un empleado
+                id_usuario: sesion.id_usuario || null, 
                 servicios: serviciosSeleccionados
             };
 
@@ -173,8 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 await apiFetch('/citas', { method: 'POST', body: JSON.stringify(datos) });
                 if (modalExito) modalExito.classList.add('mostrar');
-                await cargarReservasDelMes();
-                generarCalendario();
+                await actualizarCalendario();
             } catch (err) {
                 mostrarError(err.message || 'No se pudo guardar la reservación. Intenta de nuevo.');
             } finally {

@@ -1,11 +1,10 @@
-// controllers/citasController.js
 const pool = require('../config/db');
 
-// GET /api/citas?mes=7&anio=2026
-// Sirve para pintar el calendario de reservaciones.js con los días ya
-// ocupados, en vez de que esté vacío/estático como está ahora.
+// GET /api/citas?mes=7&anio=2026&id_usuario=X
+// Sirve para pintar el calendario de reservaciones.js con los días ya ocupados.
 async function obtenerCitas(req, res) {
-  const { mes, anio, id_cliente } = req.query;
+  // CORREGIDO: Ahora extraemos id_usuario en lugar de id_cliente para coincidir con el Frontend
+  const { mes, anio, id_usuario } = req.query;
 
   try {
     let consulta = `
@@ -23,9 +22,10 @@ async function obtenerCitas(req, res) {
       parametros.push(mes, anio);
     }
 
-    if (id_cliente) {
+    // CORREGIDO: Filtra las citas basándose en el id_usuario que mandó el Frontend del cliente
+    if (id_usuario) {
       consulta += ' AND ci.id_cliente = ?';
-      parametros.push(id_cliente);
+      parametros.push(id_usuario);
     }
 
     const [citas] = await pool.query(consulta, parametros);
@@ -37,14 +37,6 @@ async function obtenerCitas(req, res) {
 }
 
 // POST /api/citas
-// Espera lo mismo que ya captura tu formulario de reservaciones.js, más
-// la lista de servicios elegidos:
-// {
-//   fechaEntrada, fechaSalida, nombreCliente, telefonoCliente,
-//   nombreMascota, edadMascota, razaMascota,
-//   id_usuario,        // quién de tu personal registró la cita (o null si es autoservicio)
-//   servicios: [1, 3]  // ids de SERVICIO elegidos
-// }
 async function crearCita(req, res) {
   const {
     fechaEntrada, fechaSalida, nombreCliente, telefonoCliente,
@@ -59,20 +51,27 @@ async function crearCita(req, res) {
   try {
     await conexion.beginTransaction();
 
-    // 1. Buscar o crear al cliente por teléfono
+    // 1. Obtener o crear el ID del cliente
     let idCliente;
-    const [clientesExistentes] = await conexion.query('SELECT id_cliente FROM CLIENTE WHERE contacto = ?', [telefonoCliente]);
-    if (clientesExistentes.length > 0) {
-      idCliente = clientesExistentes[0].id_cliente;
+    
+    // Si la cita la hace el cliente logueado, usamos directamente su id de usuario
+    if (id_usuario) {
+      idCliente = id_usuario;
     } else {
-      const [nuevoCliente] = await conexion.query(
-        'INSERT INTO CLIENTE (nombre, contacto) VALUES (?, ?)',
-        [nombreCliente, telefonoCliente]
-      );
-      idCliente = nuevoCliente.insertId;
+      // Si la hace un administrador/empleado en mostrador, se busca por teléfono
+      const [clientesExistentes] = await conexion.query('SELECT id_cliente FROM CLIENTE WHERE contacto = ?', [telefonoCliente]);
+      if (clientesExistentes.length > 0) {
+        idCliente = clientesExistentes[0].id_cliente;
+      } else {
+        const [nuevoCliente] = await conexion.query(
+          'INSERT INTO CLIENTE (nombre, contacto) VALUES (?, ?)',
+          [nombreCliente, telefonoCliente]
+        );
+        idCliente = nuevoCliente.insertId;
+      }
     }
 
-    // 2. Buscar o crear la mascota (por nombre + dueño, ya que aún no tiene cuenta propia)
+    // 2. Buscar o crear la mascota (por nombre + dueño)
     let idMascota;
     const [mascotasExistentes] = await conexion.query(
       'SELECT id_mascota FROM MASCOTA WHERE nombre = ? AND id_cliente = ?',
@@ -113,7 +112,7 @@ async function crearCita(req, res) {
   }
 }
 
-// PUT /api/citas/:id/estado   Espera: { estado: 'confirmada' | 'cancelada' | ... }
+// PUT /api/citas/:id/estado
 async function actualizarEstadoCita(req, res) {
   const { id } = req.params;
   const { estado } = req.body;
@@ -127,4 +126,26 @@ async function actualizarEstadoCita(req, res) {
   }
 }
 
-module.exports = { obtenerCitas, crearCita, actualizarEstadoCita };
+// DELETE /api/citas/:id
+async function eliminarCita(req, res) {
+  const { id } = req.params;
+
+  try {
+    // 1. Primero eliminamos los servicios relacionados en la tabla intermedia
+    await pool.query('DELETE FROM CITA_SERVICIO WHERE id_cita = ?', [id]);
+
+    // 2. Ahora eliminamos físicamente la cita de la tabla principal
+    const [resultado] = await pool.query('DELETE FROM CITA WHERE id_cita = ?', [id]);
+
+    if (resultado.affectedRows === 0) {
+      return res.status(404).json({ ok: false, mensaje: 'La reservación no existe.' });
+    }
+
+    return res.json({ ok: true, mensaje: 'Reservación eliminada correctamente.' });
+  } catch (error) {
+    console.error('Error al eliminar cita:', error);
+    return res.status(500).json({ ok: false, mensaje: 'Error del servidor al intentar eliminar.' });
+  }
+}
+
+module.exports = { obtenerCitas, crearCita, actualizarEstadoCita, eliminarCita };

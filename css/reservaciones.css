@@ -235,6 +235,37 @@ body {
     border-color: #52a3ff !important;
 }
 
+.dia--ocupado {
+    background-color: #e6f0fa !important;
+    color: #1a73e8 !important;
+    border-color: #adcffd !important;
+    position: relative;
+    font-weight: 700;
+}
+
+/* Puntito indicador estético debajo del número para denotar reservación */
+.dia--ocupado::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5px;
+    height: 5px;
+    background-color: #1a73e8;
+    border-radius: 50%;
+}
+
+/* Efecto hover sobre los días ocupados */
+.dia--ocupado:hover {
+    background-color: #d2e3fc !important;
+    border-color: #1a73e8 !important;
+}
+
+/* Transición suave para el buscador local (opacidad) */
+.dia {
+    transition: opacity 0.25s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
 /* ==========================================================================
    FORMULARIO DE RESERVA
    ========================================================================== */

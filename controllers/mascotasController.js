@@ -1,9 +1,6 @@
-// controllers/mascotasController.js
 const pool = require('../config/db');
 
 // GET /api/mascotas
-// Uso admin: trae todas. Con ?id_cliente=5 filtra por cliente.
-// Con ?id_usuario=3 filtra por la cuenta de usuario ligada a ese cliente.
 async function obtenerMascotas(req, res) {
   const { id_cliente, id_usuario } = req.query;
 
@@ -11,7 +8,7 @@ async function obtenerMascotas(req, res) {
     let consulta = `
       SELECT m.*, c.nombre AS dueno, c.contacto AS telefono
       FROM MASCOTA m
-      JOIN CLIENTE c ON m.id_cliente = c.id_cliente
+      LEFT JOIN CLIENTE c ON m.id_cliente = c.id_cliente
     `;
     const parametros = [];
 
@@ -31,14 +28,14 @@ async function obtenerMascotas(req, res) {
   }
 }
 
-// GET /api/mascotas/:id  -> incluye su prescripción, si tiene
+// GET /api/mascotas/:id
 async function obtenerMascotaPorId(req, res) {
   const { id } = req.params;
 
   try {
     const [mascotas] = await pool.query(
       `SELECT m.*, c.nombre AS dueno, c.contacto AS telefono
-       FROM MASCOTA m JOIN CLIENTE c ON m.id_cliente = c.id_cliente
+       FROM MASCOTA m LEFT JOIN CLIENTE c ON m.id_cliente = c.id_cliente
        WHERE m.id_mascota = ?`,
       [id]
     );
@@ -153,10 +150,35 @@ async function guardarPrescripcion(req, res) {
   }
 }
 
+// DELETE /api/mascotas/:id  <-- ¡AGREGADA!
+async function eliminarMascota(req, res) {
+  const { id } = req.params;
+
+  const conexion = await pool.getConnection();
+  try {
+    await conexion.beginTransaction();
+
+    // Eliminar prescripciones primero para no romper claves foráneas
+    await conexion.query('DELETE FROM PRESCRIPCION WHERE id_mascota = ?', [id]);
+    // Eliminar la mascota
+    await conexion.query('DELETE FROM MASCOTA WHERE id_mascota = ?', [id]);
+
+    await conexion.commit();
+    return res.json({ ok: true, mensaje: 'Mascota eliminada correctamente.' });
+  } catch (error) {
+    await conexion.rollback();
+    console.error('Error al eliminar mascota:', error);
+    return res.status(500).json({ ok: false, mensaje: 'Error del servidor al eliminar.' });
+  } finally {
+    conexion.release();
+  }
+}
+
 module.exports = {
   obtenerMascotas,
   obtenerMascotaPorId,
   crearMascota,
   actualizarMascota,
   guardarPrescripcion,
+  eliminarMascota
 };
