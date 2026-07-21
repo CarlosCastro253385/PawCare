@@ -31,13 +31,17 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Rutas de la API
-app.use('/api', authRoutes);
+// =========================================================
+// RUTAS DE LA API (ORDEN CORREGIDO PARA EVITAR BLOQUEOS)
+// =========================================================
 app.use('/api/mascotas', mascotasRoutes);
 app.use('/api/servicios', serviciosRoutes);
 app.use('/api/citas', citasRoutes);
 app.use('/api/ganancias', gananciasRoutes);
 app.use('/api/perfil', perfilRoutes);
+
+// Auth va al final para que no intercepte las demás rutas /api/...
+app.use('/api', authRoutes);
 
 const PORT = process.env.PORT || 8080;
 
