@@ -1,5 +1,4 @@
-const pool = require('../config/db');
-
+// controllers/citasController.js
 const pool = require('../config/db');
 
 // GET /api/citas
@@ -25,7 +24,6 @@ async function obtenerCitas(req, res) {
     `;
     const parametros = [];
 
-    // Filtro flexible por mes y año
     if (mes && anio) {
       consulta += ` AND (
         (MONTH(ci.fecha_entrada) = ? AND YEAR(ci.fecha_entrada) = ?) OR
@@ -63,7 +61,6 @@ async function crearCita(req, res) {
     await conexion.beginTransaction();
 
     let idCliente = null;
-    
     if (!id_usuario) {
       const [clientesExistentes] = await conexion.query('SELECT id_cliente FROM CLIENTE WHERE contacto = ?', [telefonoCliente]);
       if (clientesExistentes.length > 0) {
