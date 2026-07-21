@@ -15,12 +15,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const mainGalleryCaption = document.querySelector('.gallery-caption');
     const thumbnails = document.querySelectorAll('.gallery-thumbnails .thumb');
 
+    // 👇 AQUÍ ESTÁ EL CAMBIO: Usamos los nombres reales de tus archivos HTML
     const captions = {
-        "foto5.png": "Área de Descanso",
-        "foto6.png": "Zona de Juegos",
-        "foto7.png": "Patio Principal",
-        "foto8.png": "Alberca Canina",
-        "foto9.png": "Estética"
+        "instalaciones-1.png": "Área de Descanso",
+        "instalaciones-2.png": "Zona de Juegos",
+        "instalaciones-3.png": "Patio Principal",
+        "instalaciones-4.png": "Alberca Canina",
+        "instalaciones-5.png": "Área de Estética"
     };
 
     thumbnails.forEach((thumb, index) => {
@@ -37,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (captions[fileName]) {
                     mainGalleryCaption.textContent = captions[fileName];
                 } else {
-                    mainGalleryCaption.textContent = `Instalación ${index + 1}`;
+                    mainGalleryCaption.textContent = `PawCare - Área ${index + 1}`;
                 }
             }
         });
