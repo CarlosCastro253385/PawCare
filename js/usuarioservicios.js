@@ -12,7 +12,7 @@
                 ...opciones.headers
             };
         }
-
+              
         const respuesta = await fetch(urlCompleta, opciones);
         
         if (!respuesta.ok) {
