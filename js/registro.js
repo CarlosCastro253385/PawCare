@@ -12,7 +12,7 @@ registerForm.addEventListener('submit', async (event) => {
   const data = Object.fromEntries(new FormData(registerForm).entries());
   const telefono = data.telefono.replace(/\D/g, '');
 
-  // ---------- Las mismas validaciones de antes, se quedan igual ----------
+  // ---------- Validaciones ----------
   if (Object.values(data).some((value) => !value.trim()) || telefono.length !== 10) {
     showMessage('Completa todos los campos y escribe un teléfono de 10 dígitos.');
     return;
@@ -26,10 +26,10 @@ registerForm.addEventListener('submit', async (event) => {
     return;
   }
 
-  // ---------- Aquí es donde antes se guardaba en localStorage ----------
-  // Ahora se lo mandamos a la API real:
+  // ---------- Petición a la API ----------
   try {
-    const respuesta = await fetch(`${API_URL}/api/registro`, {
+    // 💡 CAMBIO: Usamos API_BASE y quitamos el /api repetido
+    const respuesta = await fetch(`${API_BASE}/registro`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -38,14 +38,13 @@ registerForm.addEventListener('submit', async (event) => {
         correo: data.correo.trim(),
         contrasena: data.contrasena,
         telefono,
-        direccion: '', // tu formulario actual no pide dirección; se puede agregar luego en el perfil
+        direccion: '', 
       }),
     });
 
     const resultado = await respuesta.json();
 
     if (!respuesta.ok || !resultado.ok) {
-      // El endpoint regresa 409 si el usuario o correo ya existen
       showMessage(resultado.mensaje || 'No se pudo crear la cuenta.');
       return;
     }
