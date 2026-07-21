@@ -1,8 +1,6 @@
 // controllers/serviciosController.js
 const pool = require('../config/db');
 
-const pool = require('../config/db');
-
 // GET /api/servicios
 async function obtenerServicios(req, res) {
   try {
@@ -17,11 +15,6 @@ async function obtenerServicios(req, res) {
     return res.status(500).json({ ok: false, mensaje: 'Error al consultar servicios en la base de datos.' });
   }
 }
-
-module.exports = {
-  obtenerServicios,
-  // ... mantén tus funciones de crearServicio, actualizarServicio y eliminarServicio
-};
 
 // POST /api/servicios
 // Espera: { nombre, titulo, descripcion, foto, precio_grande, precio_mediano, precio_pequeno }
@@ -81,4 +74,9 @@ async function eliminarServicio(req, res) {
   }
 }
 
-module.exports = { obtenerServicios, crearServicio, actualizarServicio, eliminarServicio };
+module.exports = { 
+  obtenerServicios, 
+  crearServicio, 
+  actualizarServicio, 
+  eliminarServicio 
+};
