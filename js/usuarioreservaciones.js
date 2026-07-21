@@ -1,249 +1,340 @@
-// Helper unificado usando API_BASE
-async function apiFetch(endpoint, opciones = {}) {
-  const urlCompleta = `${API_BASE}${endpoint}`;
-  opciones.headers = {
-    'Content-Type': 'application/json',
-    ...opciones.headers
-  };
+document.addEventListener('DOMContentLoaded', () => {
 
-  const respuesta = await fetch(urlCompleta, opciones);
-  if (!respuesta.ok) {
-    const errorData = await respuesta.json().catch(() => ({}));
-    throw new Error(errorData.mensaje || errorData.message || `Error en el servidor: ${respuesta.status}`);
-  }
+    // Helper unificado usando API_BASE o URL_BASE
+    if (typeof apiFetch === 'undefined') {
+        window.apiFetch = async function(endpoint, opciones = {}) {
+            const baseUrl = typeof API_BASE !== 'undefined' ? API_BASE : (window.URL_BASE || '/api');
+            const urlCompleta = `${baseUrl}${endpoint}`;
+            
+            opciones.headers = {
+                'Content-Type': 'application/json',
+                ...opciones.headers
+            };
 
-  return await respuesta.json();
-}
+            const respuesta = await fetch(urlCompleta, opciones);
+            
+            if (!respuesta.ok) {
+                const errorData = await respuesta.json().catch(() => ({}));
+                throw new Error(errorData.mensaje || errorData.message || `Error en el servidor: ${respuesta.status}`);
+            }
 
-const vistaCalendario = document.getElementById('vistaCalendario');
-const vistaFormulario = document.getElementById('vistaFormulario');
-const btnAgregar = document.getElementById('btnAgregar');
-const btnCancelar = document.getElementById('btnCancelar');
-const diasGrid = document.getElementById('diasGrid');
-const formReserva = document.getElementById('formReserva');
+            return await respuesta.json();
+        };
+    }
 
-const mesNombre = document.getElementById('mesNombre');
-const mesReserva = document.getElementById('mesReserva');
-const mesAnterior = document.getElementById('mesAnterior');
-const mesSiguiente = document.getElementById('mesSiguiente');
-const serviciosCheckboxes = document.getElementById('serviciosCheckboxes');
+    const vistaCalendario = document.getElementById('vistaCalendario');
+    const vistaFormulario = document.getElementById('vistaFormulario');
+    const btnAgregar = document.getElementById('btnAgregar');
+    const btnCancelar = document.getElementById('btnCancelar');
+    const diasGrid = document.getElementById('diasGrid');
+    const formReserva = document.getElementById('formReserva');
 
-const modalExito = document.getElementById('modalExito');
-const modalError = document.getElementById('modalError');
-const btnCerrarExito = document.getElementById('btnCerrarExito');
-const btnCerrarError = document.getElementById('btnCerrarError');
+    const mesNombre = document.getElementById('mesNombre');
+    const mesReserva = document.getElementById('mesReserva');
+    const mesAnterior = document.getElementById('mesAnterior');
+    const mesSiguiente = document.getElementById('mesSiguiente');
+    const serviciosCheckboxes = document.getElementById('serviciosCheckboxes');
 
-const sesion = JSON.parse(sessionStorage.getItem('usuarioActual') || '{}');
+    const modalExito = document.getElementById('modalExito');
+    const modalError = document.getElementById('modalError');
+    const btnCerrarExito = document.getElementById('btnCerrarExito');
+    const btnCerrarError = document.getElementById('btnCerrarError');
 
-const nombreInput = document.getElementById('nombreCliente');
-const telefonoInput = document.getElementById('telefonoCliente');
-if (nombreInput) { nombreInput.value = sesion.nombre || ''; nombreInput.disabled = true; }
-if (telefonoInput) { telefonoInput.value = sesion.telefono || ''; telefonoInput.disabled = true; }
+    // Modales opcionales de detalle para el usuario
+    const modalDetalleCita = document.getElementById('modalDetalleCita');
+    const contenidoDetalleCita = document.getElementById('contenidoDetalleCita');
+    const btnCerrarDetalle = document.getElementById('btnCerrarDetalle');
 
-function mostrarVista(vista) {
-  if (vistaCalendario && vistaFormulario) {
-    [vistaCalendario, vistaFormulario].forEach(v => v.classList.remove('activa'));
-    vista.classList.add('activa');
-  }
-}
+    // Cargar y autocompletar la sesión del usuario actual
+    const sesion = JSON.parse(sessionStorage.getItem('usuarioActual') || '{}');
 
-function mostrarError(mensaje) {
-  const texto = modalError ? modalError.querySelector('p') : null;
-  if (texto && mensaje) texto.textContent = mensaje;
-  if (modalError) modalError.classList.add('mostrar');
-}
+    const nombreInput = document.getElementById('nombreCliente');
+    const telefonoInput = document.getElementById('telefonoCliente');
+    if (nombreInput) { 
+        nombreInput.value = sesion.nombre || ''; 
+        nombreInput.disabled = true; 
+    }
+    if (telefonoInput) { 
+        telefonoInput.value = sesion.telefono || ''; 
+        telefonoInput.disabled = true; 
+    }
 
-if (btnAgregar) btnAgregar.addEventListener('click', () => mostrarVista(vistaFormulario));
-if (btnCancelar) {
-  btnCancelar.addEventListener('click', () => {
-    if (formReserva) formReserva.reset();
-    mostrarVista(vistaCalendario);
-  });
-}
+    function mostrarVista(vista) {
+        if (!vista || !vistaCalendario || !vistaFormulario) return;
+        [vistaCalendario, vistaFormulario].forEach(v => v.classList.remove('activa'));
+        vista.classList.add('activa');
+    }
 
-const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-const anioActual = new Date().getFullYear();
-let indiceMes = mesReserva ? meses.indexOf(mesReserva.value) : 0;
-if (indiceMes === -1) indiceMes = 0;
-let diasOcupados = new Set();
-let citasDelMesDetalle = [];
+    function mostrarError(mensaje) {
+        const texto = modalError ? modalError.querySelector('p') : null;
+        if (texto && mensaje) texto.textContent = mensaje;
+        if (modalError) modalError.classList.add('mostrar');
+    }
 
-function obtenerDiasEnMes() { return new Date(anioActual, indiceMes + 1, 0).getDate(); }
-function obtenerPrimerDiaOffset() { return (new Date(anioActual, indiceMes, 1).getDay() + 6) % 7; }
-function diaAFechaISO(dia) {
-  return `${anioActual}-${String(indiceMes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-}
+    if (btnAgregar) btnAgregar.addEventListener('click', () => mostrarVista(vistaFormulario));
+    if (btnCancelar) {
+        btnCancelar.addEventListener('click', () => {
+            if (formReserva) formReserva.reset();
+            mostrarVista(vistaCalendario);
+        });
+    }
 
-async function cargarReservasDelMes() {
-  try {
-    const idUsuario = sesion.id_usuario || null;
-    if (!idUsuario) return;
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const anioActual = new Date().getFullYear();
+    let indiceMes = mesReserva ? meses.indexOf(mesReserva.value) : new Date().getMonth();
+    if (indiceMes === -1) indiceMes = new Date().getMonth();
 
-    const respuesta = await apiFetch(`/citas?mes=${indiceMes + 1}&anio=${anioActual}&id_usuario=${idUsuario}`, { method: 'GET' });
-    
-    diasOcupados = new Set();
-    citasDelMesDetalle = [];
-    const listaCitas = respuesta.citas || respuesta; 
-    if (!Array.isArray(listaCitas)) return;
+    let diasOcupados = new Set();
+    let citasDelMesDetalle = [];
 
-    listaCitas.forEach(cita => {
-      const fEntrada = cita.fecha_entrada || cita.fechaEntrada || cita.fecha_ingreso;
-      const fSalida = cita.fecha_salida || cita.fechaSalida;
+    function obtenerDiasEnMes() { 
+        return new Date(anioActual, indiceMes + 1, 0).getDate(); 
+    }
 
-      if (fEntrada && fSalida) {
-        const fechaEntradaLimpia = fEntrada.includes('T') ? fEntrada.split('T')[0] : fEntrada;
-        const fechaSalidaLimpia = fSalida.includes('T') ? fSalida.split('T')[0] : fSalida;
+    function obtenerPrimerDiaOffset() { 
+        return (new Date(anioActual, indiceMes, 1).getDay() + 6) % 7; 
+    }
 
-        const diaInicio = parseInt(fechaEntradaLimpia.split('-')[2]);
-        const diaFin = parseInt(fechaSalidaLimpia.split('-')[2]);
+    function diaAFechaISO(dia) {
+        return `${anioActual}-${String(indiceMes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+    }
 
-        if (!isNaN(diaInicio) && !isNaN(diaFin)) {
-          for (let d = diaInicio; d <= diaFin; d++) {
-            diasOcupados.add(d);
-            citasDelMesDetalle.push({
-              dia: d,
-              textoBuscar: `${cita.nombre_mascota || ''} ${cita.nombre_cliente || ''} ${cita.estado || ''}`.toLowerCase()
+    async function cargarReservasDelMes() {
+        try {
+            const idUsuario = sesion.id_usuario || null;
+            if (!idUsuario) return;
+
+            const respuesta = await apiFetch(`/citas?mes=${indiceMes + 1}&anio=${anioActual}&id_usuario=${idUsuario}`, { method: 'GET' });
+            
+            diasOcupados = new Set();
+            citasDelMesDetalle = [];
+            
+            const listaCitas = respuesta.citas || respuesta.data || (Array.isArray(respuesta) ? respuesta : []); 
+            if (!Array.isArray(listaCitas)) return;
+
+            listaCitas.forEach(cita => {
+                const fEntrada = cita.fecha_entrada || cita.fechaEntrada || cita.fecha_ingreso;
+                const fSalida = cita.fecha_salida || cita.fechaSalida;
+
+                if (fEntrada && fSalida) {
+                    const fechaEntradaLimpia = fEntrada.includes('T') ? fEntrada.split('T')[0] : fEntrada;
+                    const fechaSalidaLimpia = fSalida.includes('T') ? fSalida.split('T')[0] : fSalida;
+
+                    const diaInicio = parseInt(fechaEntradaLimpia.split('-')[2]);
+                    const diaFin = parseInt(fechaSalidaLimpia.split('-')[2]);
+
+                    if (!isNaN(diaInicio) && !isNaN(diaFin)) {
+                        for (let d = diaInicio; d <= diaFin; d++) {
+                            diasOcupados.add(d);
+                            citasDelMesDetalle.push({
+                                id_cita: cita.id_cita || cita.id,
+                                dia: d,
+                                mascota: cita.nombre_mascota || 'Mascota',
+                                cliente: cita.nombre_cliente || sesion.nombre || 'Cliente',
+                                telefono: cita.telefono_cliente || sesion.telefono || 'Sin teléfono',
+                                fechaEntrada: fechaEntradaLimpia,
+                                fechaSalida: fechaSalidaLimpia,
+                                estado: cita.estado || 'Confirmada'
+                            });
+                        }
+                    }
+                }
             });
-          }
+        } catch (err) {
+            console.warn('Error al cargar reservaciones del usuario:', err.message);
+            diasOcupados = new Set();
+            citasDelMesDetalle = [];
         }
-      }
-    });
-  } catch (err) {
-    diasOcupados = new Set();
-    citasDelMesDetalle = [];
-  }
-}
-
-function generarCalendario() {
-  if (!diasGrid) return;
-  diasGrid.innerHTML = '';
-  for (let i = 0; i < obtenerPrimerDiaOffset(); i++) {
-    const vacio = document.createElement('div');
-    vacio.className = 'dia dia--vacio';
-    diasGrid.appendChild(vacio);
-  }
-  for (let dia = 1; dia <= obtenerDiasEnMes(); dia++) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'dia';
-    btn.textContent = dia;
-    
-    if (diasOcupados.has(dia)) {
-      btn.classList.add('dia--ocupado');
-      const infoCita = citasDelMesDetalle.find(c => c.dia === dia);
-      btn.dataset.info = infoCita ? infoCita.textoBuscar : 'ocupado';
-    }
-    
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.dia').forEach(d => d.classList.remove('dia--seleccionado'));
-      btn.classList.add('dia--seleccionado');
-    });
-    diasGrid.appendChild(btn);
-  }
-}
-
-function llenarSelectFechas(id) {
-  const select = document.getElementById(id);
-  if (!select) return;
-  
-  const valorPrevio = select.value; 
-  select.innerHTML = '<option value="">Selecciona</option>';
-  for (let dia = 1; dia <= obtenerDiasEnMes(); dia++) {
-    const option = document.createElement('option');
-    option.value = dia;
-    option.textContent = dia;
-    select.appendChild(option);
-  }
-  if (valorPrevio && valorPrevio <= obtenerDiasEnMes()) {
-    select.value = valorPrevio;
-  }
-}
-
-async function cargarServiciosDisponibles() {
-  if (!serviciosCheckboxes) return;
-  try {
-    const respuesta = await apiFetch('/servicios', { method: 'GET' });
-    serviciosCheckboxes.innerHTML = (respuesta.servicios || []).map(srv => `
-      <label class="checkbox-servicio">
-        <input type="checkbox" name="servicio" value="${srv.id_servicio}">
-        ${srv.nombre}
-      </label>
-    `).join('');
-  } catch (err) {
-    serviciosCheckboxes.innerHTML = '<p style="color:#888;">No se pudieron cargar los servicios disponibles.</p>';
-  }
-}
-
-async function actualizarCalendario() {
-  if (mesNombre) mesNombre.textContent = meses[indiceMes];
-  if (mesReserva) mesReserva.value = meses[indiceMes];
-  await cargarReservasDelMes();
-  generarCalendario();
-  llenarSelectFechas('fechaIngreso');
-  llenarSelectFechas('fechaSalida');
-}
-
-if (mesReserva && mesNombre) {
-  mesReserva.addEventListener('change', () => { indiceMes = meses.indexOf(mesReserva.value); actualizarCalendario(); });
-}
-if (mesAnterior) mesAnterior.addEventListener('click', () => { indiceMes = (indiceMes + 11) % meses.length; actualizarCalendario(); });
-if (mesSiguiente) mesSiguiente.addEventListener('click', () => { indiceMes = (indiceMes + 1) % meses.length; actualizarCalendario(); });
-
-actualizarCalendario();
-cargarServiciosDisponibles();
-
-if (formReserva) {
-  formReserva.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const diaIngreso = parseInt(document.getElementById('fechaIngreso').value);
-    const diaSalida = parseInt(document.getElementById('fechaSalida').value);
-
-    if (!diaIngreso || !diaSalida) {
-      mostrarError('Por favor selecciona las fechas de ingreso y salida.');
-      return;
     }
 
-    if (diaSalida < diaIngreso) {
-      mostrarError('La fecha de salida no puede ser antes que la fecha de ingreso.');
-      return;
+    function generarCalendario() {
+        if (!diasGrid) return;
+        diasGrid.innerHTML = '';
+
+        for (let i = 0; i < obtenerPrimerDiaOffset(); i++) {
+            const vacio = document.createElement('div');
+            vacio.className = 'dia dia--vacio';
+            diasGrid.appendChild(vacio);
+        }
+
+        for (let dia = 1; dia <= obtenerDiasEnMes(); dia++) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'dia';
+            btn.textContent = dia;
+            
+            const registrosDelDia = citasDelMesDetalle.filter(c => c.dia === dia);
+
+            if (diasOcupados.has(dia)) {
+                btn.classList.add('dia--ocupado');
+                if (registrosDelDia.length > 0) {
+                    btn.title = registrosDelDia.map(r => `Reserva: ${r.mascota} (${r.estado})`).join('\n');
+                }
+            }
+            
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.dia').forEach(d => d.classList.remove('dia--seleccionado'));
+                btn.classList.add('dia--seleccionado');
+
+                // Si se configuró un modal para ver detalles de su reservación
+                if (registrosDelDia.length > 0 && contenidoDetalleCita && modalDetalleCita) {
+                    const cita = registrosDelDia[0];
+                    contenidoDetalleCita.innerHTML = `
+                        <p><strong>Mascota:</strong> ${cita.mascota}</p>
+                        <p><strong>Fecha de Ingreso:</strong> ${cita.fechaEntrada}</p>
+                        <p><strong>Fecha de Salida:</strong> ${cita.fechaSalida}</p>
+                        <p><strong>Estado:</strong> <span class="badge">${cita.estado}</span></p>
+                    `;
+                    modalDetalleCita.classList.add('mostrar');
+                }
+            });
+
+            diasGrid.appendChild(btn);
+        }
     }
 
-    const serviciosSeleccionados = Array.from(
-      document.querySelectorAll('input[name="servicio"]:checked')
-    ).map(chk => Number(chk.value));
-
-    const datos = {
-      fechaEntrada: diaAFechaISO(diaIngreso),
-      fechaSalida: diaAFechaISO(diaSalida),
-      nombreCliente: sesion.nombre,
-      telefonoCliente: sesion.telefono,
-      nombreMascota: document.getElementById('nombreMascota').value,
-      edadMascota: document.getElementById('edadMascota').value,
-      razaMascota: document.getElementById('razaMascota').value,
-      id_usuario: sesion.id_usuario || null, 
-      servicios: serviciosSeleccionados
-    };
-
-    const btnGuardar = formReserva.querySelector('button[type="submit"]');
-    if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = 'Guardando...'; }
-
-    try {
-      await apiFetch('/citas', { method: 'POST', body: JSON.stringify(datos) });
-      if (modalExito) modalExito.classList.add('mostrar');
-      await actualizarCalendario();
-    } catch (err) {
-      mostrarError(err.message || 'No se pudo guardar la reservación. Intenta de nuevo.');
-    } finally {
-      if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = 'Guardar reservación'; }
+    if (btnCerrarDetalle) {
+        btnCerrarDetalle.addEventListener('click', () => {
+            if (modalDetalleCita) modalDetalleCita.classList.remove('mostrar');
+        });
     }
-  });
-}
 
-if (btnCerrarExito) {
-  btnCerrarExito.addEventListener('click', () => {
-    modalExito.classList.remove('mostrar');
-    if (formReserva) formReserva.reset();
-    mostrarVista(vistaCalendario);
-  });
-}
-if (btnCerrarError) btnCerrarError.addEventListener('click', () => modalError.classList.remove('mostrar'));
+    function llenarSelectFechas(id) {
+        const select = document.getElementById(id);
+        if (!select) return;
+        
+        const valorPrevio = select.value; 
+        select.innerHTML = '<option value="">Selecciona</option>';
+        for (let dia = 1; dia <= obtenerDiasEnMes(); dia++) {
+            const option = document.createElement('option');
+            option.value = dia;
+            option.textContent = dia;
+            select.appendChild(option);
+        }
+        if (valorPrevio && valorPrevio <= obtenerDiasEnMes()) {
+            select.value = valorPrevio;
+        }
+    }
+
+    async function cargarServiciosDisponibles() {
+        if (!serviciosCheckboxes) return;
+        try {
+            const respuesta = await apiFetch('/servicios', { method: 'GET' });
+            const servicios = respuesta.servicios || respuesta.data || (Array.isArray(respuesta) ? respuesta : []);
+
+            if (!Array.isArray(servicios) || servicios.length === 0) {
+                serviciosCheckboxes.innerHTML = '<p style="color:#888; font-size:14px;">No hay servicios adicionales disponibles por el momento.</p>';
+                return;
+            }
+
+            serviciosCheckboxes.innerHTML = servicios.map(srv => {
+                const id = srv.id_servicio || srv.id;
+                const nombre = srv.nombre || 'Servicio';
+                return `
+                    <label class="checkbox-servicio" style="display: inline-flex; align-items: center; gap: 8px; margin-right: 15px; margin-bottom: 10px; cursor: pointer; font-size: 14px; background: rgba(255,255,255,0.6); padding: 6px 12px; border-radius: 6px; border: 1px solid #ddd;">
+                        <input type="checkbox" name="servicio" value="${id}">
+                        <span>${nombre}</span>
+                    </label>
+                `;
+            }).join('');
+        } catch (err) {
+            console.warn('Error al cargar servicios:', err.message);
+            serviciosCheckboxes.innerHTML = '<p style="color:#888;">No se pudieron cargar los servicios disponibles.</p>';
+        }
+    }
+
+    async function actualizarCalendario() {
+        if (mesNombre) mesNombre.textContent = meses[indiceMes];
+        if (mesReserva) mesReserva.value = meses[indiceMes];
+        await cargarReservasDelMes();
+        generarCalendario();
+        llenarSelectFechas('fechaIngreso');
+        llenarSelectFechas('fechaSalida');
+    }
+
+    if (mesReserva && mesNombre) {
+        mesReserva.addEventListener('change', () => { 
+            indiceMes = meses.indexOf(mesReserva.value); 
+            actualizarCalendario(); 
+        });
+    }
+    if (mesAnterior) {
+        mesAnterior.addEventListener('click', () => { 
+            indiceMes = (indiceMes + 11) % meses.length; 
+            actualizarCalendario(); 
+        });
+    }
+    if (mesSiguiente) {
+        mesSiguiente.addEventListener('click', () => { 
+            indiceMes = (indiceMes + 1) % meses.length; 
+            actualizarCalendario(); 
+        });
+    }
+
+    // Inicializar la vista
+    actualizarCalendario();
+    cargarServiciosDisponibles();
+
+    if (formReserva) {
+        formReserva.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const diaIngreso = parseInt(document.getElementById('fechaIngreso').value);
+            const diaSalida = parseInt(document.getElementById('fechaSalida').value);
+
+            if (!diaIngreso || !diaSalida) {
+                mostrarError('Por favor selecciona las fechas de ingreso y salida.');
+                return;
+            }
+
+            if (diaSalida < diaIngreso) {
+                mostrarError('La fecha de salida no puede ser antes que la fecha de ingreso.');
+                return;
+            }
+
+            const serviciosSeleccionados = Array.from(
+                document.querySelectorAll('input[name="servicio"]:checked')
+            ).map(chk => Number(chk.value));
+
+            const datos = {
+                fechaEntrada: diaAFechaISO(diaIngreso),
+                fechaSalida: diaAFechaISO(diaSalida),
+                nombreCliente: sesion.nombre || document.getElementById('nombreCliente').value,
+                telefonoCliente: sesion.telefono || document.getElementById('telefonoCliente').value,
+                nombreMascota: document.getElementById('nombreMascota').value,
+                edadMascota: document.getElementById('edadMascota').value,
+                razaMascota: document.getElementById('razaMascota').value,
+                id_usuario: sesion.id_usuario || null, 
+                servicios: serviciosSeleccionados
+            };
+
+            const btnGuardar = formReserva.querySelector('button[type="submit"]');
+            if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = 'Guardando...'; }
+
+            try {
+                await apiFetch('/citas', { method: 'POST', body: JSON.stringify(datos) });
+                
+                if (modalExito) modalExito.classList.add('mostrar');
+                await actualizarCalendario();
+            } catch (err) {
+                mostrarError(err.message || 'No se pudo guardar la reservación. Intenta de nuevo.');
+            } finally {
+                if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = 'Guardar reservación'; }
+            }
+        });
+    }
+
+    if (btnCerrarExito) {
+        btnCerrarExito.addEventListener('click', () => {
+            if (modalExito) modalExito.classList.remove('mostrar');
+            if (formReserva) formReserva.reset();
+            mostrarVista(vistaCalendario);
+        });
+    }
+
+    if (btnCerrarError) {
+        btnCerrarError.addEventListener('click', () => {
+            if (modalError) modalError.classList.remove('mostrar');
+        });
+    }
+});

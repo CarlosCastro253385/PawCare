@@ -1,4 +1,4 @@
-\document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     // -------------------------------------------------------------------
     // 1. PETICIÓN GENERAL (Maneja JSON y FormData de forma automática)
     // -------------------------------------------------------------------

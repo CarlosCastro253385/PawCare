@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Aseguramos que apiFetch esté definido en esta pantalla con la ruta base correcta
     if (typeof apiFetch === 'undefined') {
         window.apiFetch = async function(endpoint, opciones = {}) {
-            const urlCompleta = `${URL_BASE}${endpoint}`;
+            const urlCompleta = `${window.URL_BASE || '/api'}${endpoint}`;
             
             opciones.headers = {
                 'Content-Type': 'application/json',
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (!respuesta.ok) {
                 const errorData = await respuesta.json().catch(() => ({}));
-                throw new Error(errorData.message || `Error en el servidor: ${respuesta.status}`);
+                throw new Error(errorData.message || errorData.mensaje || `Error en el servidor: ${respuesta.status}`);
             }
 
             return await respuesta.json();
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCerrarExito = document.getElementById('btnCerrarExito');
     const btnCerrarError = document.getElementById('btnCerrarError');
 
-    // Elementos del nuevo modal de eliminación
+    // Elementos del modal de detalle / eliminación
     const modalDetalleCita = document.getElementById('modalDetalleCita');
     const contenidoDetalleCita = document.getElementById('contenidoDetalleCita');
     const btnEliminarCita = document.getElementById('btnEliminarCita');
@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
             diasOcupados = new Set();
             citasDelMesDetalle = []; 
             
-            const listaCitas = respuesta.citas || respuesta; 
+            const listaCitas = respuesta.citas || respuesta.data || (Array.isArray(respuesta) ? respuesta : []); 
             if (!Array.isArray(listaCitas)) return;
 
             listaCitas.forEach(cita => {
@@ -237,12 +237,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnEliminarCita.textContent = 'Eliminando...';
                 
                 try {
-                    // Petición REST correcta enlazada al backend mapeado
                     await apiFetch(`/citas/${citaSeleccionadaId}`, {
                         method: 'DELETE'
                     });
                     
-                    // Al ser exitoso, invocamos la limpieza de pantalla
                     exitoEliminacion();
                     
                 } catch (err) {
@@ -256,7 +254,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Función auxiliar para limpiar la pantalla tras borrar con éxito
     function exitoEliminacion() {
         if (modalDetalleCita) modalDetalleCita.classList.remove('mostrar');
         actualizarCalendario();
@@ -283,21 +280,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // -------------------------------------------------------------------
+    // FUNCIÓN DE SERVICIOS OPTIMIZADA (Soporta múltiples respuestas)
+    // -------------------------------------------------------------------
     async function cargarServiciosDisponibles() {
         if (!serviciosCheckboxes) return;
+        
         try {
             const respuesta = await apiFetch('/servicios', { method: 'GET' });
-            const servicios = respuesta.servicios || [];
+            
+            // Flexibilidad para obtener la lista sin importar el formato del JSON
+            const servicios = respuesta.servicios || respuesta.data || (Array.isArray(respuesta) ? respuesta : []);
 
-            serviciosCheckboxes.innerHTML = servicios.map(srv => `
-                <label class="checkbox-servicio">
-                    <input type="checkbox" name="servicio" value="${srv.id_servicio}">
-                    ${srv.nombre}
-                </label>
-            `).join('');
+            if (!Array.isArray(servicios) || servicios.length === 0) {
+                serviciosCheckboxes.innerHTML = '<p style="color:#888; font-size: 14px;">No hay servicios creados aún en el catálogo.</p>';
+                return;
+            }
+
+            serviciosCheckboxes.innerHTML = servicios.map(srv => {
+                const id = srv.id_servicio || srv.id;
+                const nombre = srv.nombre || 'Servicio sin nombre';
+                return `
+                    <label class="checkbox-servicio" style="display: inline-flex; align-items: center; gap: 8px; margin-right: 15px; margin-bottom: 10px; cursor: pointer; font-size: 14px; background: rgba(255,255,255,0.6); padding: 6px 12px; border-radius: 6px; border: 1px solid #ddd;">
+                        <input type="checkbox" name="servicio" value="${id}">
+                        <span>${nombre}</span>
+                    </label>
+                `;
+            }).join('');
+
         } catch (err) {
-            console.warn('No se pudieron cargar los servicios:', err.message);
-            serviciosCheckboxes.innerHTML = '<p style="color:#888;">No se pudieron cargar los servicios disponibles.</p>';
+            console.warn('Error al cargar servicios en reservas:', err.message);
+            serviciosCheckboxes.innerHTML = '<p style="color:#e71d36; font-size: 14px;">No se pudieron cargar los servicios disponibles.</p>';
         }
     }
 
@@ -329,6 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Inicializar datos al cargar
     actualizarCalendario();
     cargarServiciosDisponibles();
 
