@@ -1,101 +1,60 @@
-document.addEventListener('DOMContentLoaded', () => {
+// Función para guardar el servicio desde el panel de administración
+async function guardarServicio(event) {
+  if (event) event.preventDefault();
 
-    const servicesContainer = document.getElementById('services-container');
-    let servicesData = [];
+  // 1. Capturar elementos del formulario
+  const nombreInput = document.getElementById('nombreServicio') || document.querySelector('input[placeholder*="Nombre"]');
+  const detallesInput = document.getElementById('detallesServicio') || document.querySelector('textarea[placeholder*="Detalles"]');
+  const descripcionInput = document.getElementById('descripcionServicio') || document.querySelector('textarea[placeholder*="descripción"]');
+  const precioInput = document.getElementById('precioServicio') || document.querySelector('input[placeholder*="Precio"]');
+  const imagenInput = document.getElementById('imagenServicio') || document.querySelector('input[type="file"]');
 
-    // Función base para comunicar con tu servidor AWS
-    async function apiFetch(endpoint, opciones = {}) {
-        const urlCompleta = `${URL_BASE}${endpoint}`;
-        opciones.headers = {
-            'Content-Type': 'application/json',
-            ...opciones.headers
-        };
-        const respuesta = await fetch(urlCompleta, opciones);
-        if (!respuesta.ok) {
-            const errorData = await respuesta.json().catch(() => ({}));
-            throw new Error(errorData.message || `Error en el servidor: ${respuesta.status}`);
-        }
-        return await respuesta.json();
+  // 2. Extraer y procesar el precio
+  // Si en la casilla escribes "$350 / $280 / $200" o "350/280/200", los dividimos
+  const textoPrecio = precioInput.value;
+  const preciosEncontrados = textoPrecio.match(/\d+/g) || [];
+
+  // Asignar precios según los valores encontrados (o un valor por defecto)
+  const precioGrande = parseFloat(preciosEncontrados[0] || 350);
+  const precioMediano = parseFloat(preciosEncontrados[1] || preciosEncontrados[0] || 280);
+  const precioChico = parseFloat(preciosEncontrados[2] || preciosEncontrados[0] || 200);
+
+  // 3. Crear el FormData con los nombres EXACTOS de campos que espera tu BD
+  const formData = new FormData();
+  formData.append('nombre', nombreInput.value.trim());
+  formData.append('descripcion', descripcionInput.value.trim());
+  
+  // Guardamos el texto de detalles en 'titulo_corto' (como lo lee tu renderUserCatalog)
+  formData.append('titulo_corto', detallesInput.value.trim()); 
+  
+  // Enviamos los 3 precios individuales que tu base de datos requiere
+  formData.append('precio_grande', precioGrande);
+  formData.append('precio_mediano', precioMediano);
+  formData.append('precio_chico', precioChico);
+
+  // Solo adjuntar si el usuario seleccionó una imagen
+  if (imagenInput && imagenInput.files && imagenInput.files[0]) {
+    formData.append('imagen', imagenInput.files[0]);
+  }
+
+  // 4. Enviar Petición al Backend
+  try {
+    const respuesta = await fetch(`${URL_BASE}/servicios`, {
+      method: 'POST',
+      body: formData // NOTA: No colocar 'Content-Type' header cuando se usa FormData
+    });
+
+    const data = await respuesta.json().catch(() => ({}));
+
+    if (!respuesta.ok) {
+      throw new Error(data.message || data.error || `Error ${respuesta.status}`);
     }
 
-    // Obtener la información real desde el Backend
-    async function fetchServices() {
-        if (!servicesContainer) return;
-        
-        try {
-            const respuesta = await apiFetch('/servicios', { method: 'GET' });
-            // Adaptación flexible según cómo responda tu API estructurada
-            servicesData = respuesta.servicios || respuesta.data || respuesta;
-        } catch (err) {
-            console.warn('No se pudo conectar con la API de servicios:', err.message);
-            servicesData = [];
-        }
-        renderUserCatalog();
-    }
+    alert('¡Servicio registrado con éxito!');
+    location.reload();
 
-    // Renderizar el catálogo limpio en modo lectura para el cliente
-    function renderUserCatalog() {
-        if (!servicesContainer) return;
-        servicesContainer.innerHTML = "";
-
-        if (!Array.isArray(servicesData) || servicesData.length === 0) {
-            servicesContainer.innerHTML = `<p style="color: #666; font-size: 16px; text-align: center; padding: 20px;">No hay servicios disponibles en este momento.</p>`;
-            return;
-        }
-
-        servicesData.forEach(srv => {
-            // Normalización de variables procedentes de la BD
-            const pGrande = parseFloat(srv.precio_grande || srv.precioGrande || 0).toFixed(2);
-            const pMediano = parseFloat(srv.precio_mediano || srv.precioMediano || 0).toFixed(2);
-            const pChico = parseFloat(srv.precio_chico || srv.precioChico || srv.precioPequeño || srv.precio_pequeno || 0).toFixed(2);
-            const foto = srv.imagen || srv.foto || 'img/default-service.png';
-            const desc = srv.descripcion || '';
-
-            // Procesamiento dinámico de los saltos de línea introducidos en el Administrador
-            const detallesRaw = srv.titulo_corto || srv.tituloCorto || '';
-            const lineas = detallesRaw.split('\n').map(d => d.trim()).filter(d => d.length > 0);
-            
-            const listaDetallesHtml = lineas.length > 0
-                ? lineas.map(linea => `<li>• ${linea}</li>`).join('')
-                : `<li>• Sin detalles especificados</li>`;
-
-            const card = document.createElement('div');
-            card.className = 'service-card';
-            card.innerHTML = `
-                <img src="${foto}" alt="${srv.nombre}" onerror="this.src='img/default-service.png'">
-                <div class="service-info">
-                    <h3>${srv.nombre}</h3>
-                    <p style="color: #607285; font-size: 14px; margin-bottom: 15px;">${desc}</p>
-                    
-                    <div class="pricing-grid">
-                        <div class="price-column">
-                            <h4>RAZA GRANDE</h4>
-                            <ul>
-                                ${listaDetallesHtml}
-                            </ul>
-                            <div class="price-value">$${pGrande}</div>
-                        </div>
-                        <div class="price-column">
-                            <h4>RAZA MEDIANA</h4>
-                            <ul>
-                                ${listaDetallesHtml}
-                            </ul>
-                            <div class="price-value">$${pMediano}</div>
-                        </div>
-                        <div class="price-column">
-                            <h4>RAZA PEQUEÑA</h4>
-                            <ul>
-                                ${listaDetallesHtml}
-                            </ul>
-                            <div class="price-value">$${pChico}</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            servicesContainer.appendChild(card);
-        });
-    }
-
-    // Ejecución inicial automática al cargar la vista
-    fetchServices();
-});
+  } catch (error) {
+    console.error('Error al guardar servicio:', error);
+    alert(`No se pudo guardar: ${error.message}`);
+  }
+}
