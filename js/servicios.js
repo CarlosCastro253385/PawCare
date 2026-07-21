@@ -1,39 +1,50 @@
 document.addEventListener('DOMContentLoaded', () => {
     const URL_BASE = window.URL_BASE || '/api';
 
-    // -------------------------------------------------------------------
-    // 1. PETICIÓN GENERAL (Maneja JSON y FormData de forma automática)
-    // -------------------------------------------------------------------
     async function apiFetch(endpoint, opciones = {}) {
         const urlCompleta = `${URL_BASE}${endpoint}`;
-        
         if (!(opciones.body instanceof FormData)) {
             opciones.headers = {
                 'Content-Type': 'application/json',
                 ...opciones.headers
             };
         }
-            
         const respuesta = await fetch(urlCompleta, opciones);
-        
         if (!respuesta.ok) {
             const errorData = await respuesta.json().catch(() => ({}));
             const mensaje = errorData.message || errorData.error || `Error en el servidor: ${respuesta.status}`;
             throw new Error(mensaje);
         }
-        
         return await respuesta.json();
     }
 
     // -------------------------------------------------------------------
-    // 2. OBTENER Y RENDERIZAR SERVICIOS (Catálogo)
+    // 1. GESTIÓN DEL MODAL (Abrir / Cerrar)
+    // -------------------------------------------------------------------
+    const modalServicio = document.getElementById('modalServicio');
+    const btnAgregarServicio = document.getElementById('btnAgregarServicio');
+    const btnCerrarModal = document.getElementById('btnCerrarModal');
+
+    if (btnAgregarServicio && modalServicio) {
+        btnAgregarServicio.addEventListener('click', () => {
+            modalServicio.style.display = 'flex';
+        });
+    }
+
+    if (btnCerrarModal && modalServicio) {
+        btnCerrarModal.addEventListener('click', () => {
+            modalServicio.style.display = 'none';
+        });
+    }
+
+    // -------------------------------------------------------------------
+    // 2. RENDERIZAR CATÁLOGO
     // -------------------------------------------------------------------
     const servicesContainer = document.getElementById('services-container');
     let servicesData = [];
 
     async function fetchServices() {
         if (!servicesContainer) return;
-        
         try {
             const respuesta = await apiFetch('/servicios', { method: 'GET' });
             servicesData = respuesta.servicios || respuesta.data || respuesta;
@@ -101,75 +112,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------------------------------------------------------------------
-    // 3. GUARDAR / CREAR NUEVO SERVICIO (Panel de Administración)
+    // 3. GUARDAR SERVICIO DESDE EL FORMULARIO
     // -------------------------------------------------------------------
-    async function guardarServicio(e) {
-        if (e) e.preventDefault();
+    const formServicio = document.getElementById('formServicio');
+    if (formServicio) {
+        formServicio.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-        const inputs = document.querySelectorAll('input, textarea');
-        let nombre = "", detalles = "", descripcion = "", precioRaw = "";
-        let archivoImagen = null;
+            const nombre = document.getElementById('nombreServicio')?.value.trim() || "";
+            const descripcion = document.getElementById('descServicio')?.value.trim() || "";
+            const detalles = document.getElementById('detallesServicio')?.value.trim() || "";
+            const precioRaw = document.getElementById('precioServicio')?.value.trim() || "";
+            const inputImagen = document.getElementById('imagenServicio');
 
-        inputs.forEach(input => {
-            const ph = (input.placeholder || "").toLowerCase();
-            const type = input.type;
+            const numeros = precioRaw.match(/\d+(\.\d+)?/g) || [250];
+            const pGrande = parseFloat(numeros[0] || 250);
+            const pMediano = parseFloat(numeros[1] || numeros[0] || 200);
+            const pChico = parseFloat(numeros[2] || numeros[0] || 150);
 
-            if (type === 'file') {
-                if (input.files && input.files[0]) archivoImagen = input.files[0];
-            } else if (ph.includes('nombre')) {
-                nombre = input.value.trim();
-            } else if (ph.includes('detalle')) {
-                detalles = input.value.trim();
-            } else if (ph.includes('descripción') || ph.includes('descripcion')) {
-                descripcion = input.value.trim();
-            } else if (ph.includes('precio')) {
-                precioRaw = input.value.trim();
+            const formData = new FormData();
+            formData.append('nombre', nombre);
+            formData.append('descripcion', descripcion);
+            formData.append('titulo_corto', detalles);
+            formData.append('precio_grande', pGrande);
+            formData.append('precio_mediano', pMediano);
+            formData.append('precio_chico', pChico);
+
+            if (inputImagen && inputImagen.files[0]) {
+                formData.append('imagen', inputImagen.files[0]);
+            }
+
+            try {
+                await apiFetch('/servicios', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                alert('¡Servicio guardado con éxito!');
+                location.reload();
+            } catch (err) {
+                console.error('Error detallado:', err);
+                alert(`Error al guardar: ${err.message}`);
             }
         });
-
-        const numeros = precioRaw.match(/\d+/g) || [250];
-        const pGrande = parseFloat(numeros[0] || 250);
-        const pMediano = parseFloat(numeros[1] || numeros[0] || 200);
-        const pChico = parseFloat(numeros[2] || numeros[0] || 150);
-
-        const formData = new FormData();
-        formData.append('nombre', nombre);
-        formData.append('descripcion', descripcion);
-        formData.append('titulo_corto', detalles);
-        formData.append('detalles', detalles);
-        formData.append('precio_grande', pGrande);
-        formData.append('precio_mediano', pMediano);
-        formData.append('precio_chico', pChico);
-        formData.append('precio', pGrande);
-
-        if (archivoImagen) {
-            formData.append('imagen', archivoImagen);
-        }
-
-        try {
-            await apiFetch('/servicios', {
-                method: 'POST',
-                body: formData
-            });
-
-            alert('¡Servicio guardado con éxito!');
-            location.reload();
-        } catch (err) {
-            console.error('Error detallado:', err);
-            alert(`Error al guardar: ${err.message}`);
-        }
     }
-
-    // -------------------------------------------------------------------
-    // 4. EVENTOS Y EJECUCIÓN
-    // -------------------------------------------------------------------
-    const botonesProcesar = document.querySelectorAll('button, .button-aceptar, #procesarBtn, .btn-primary, .btn-primario');
-    botonesProcesar.forEach(btn => {
-        const texto = btn.innerText.toLowerCase();
-        if (texto.includes('procesan') || texto.includes('aceptar') || texto.includes('guardar') || texto.includes('agregar')) {
-            btn.addEventListener('click', guardarServicio);
-        }
-    });
 
     fetchServices();
 });
