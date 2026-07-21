@@ -28,10 +28,12 @@ registerForm.addEventListener('submit', async (event) => {
 
   // ---------- Petición a la API ----------
   try {
-    // 💡 CAMBIO: Usamos API_BASE y quitamos el /api repetido
     const respuesta = await fetch(`${API_BASE}/registro`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'bypass-tunnel-reminder': 'true' // ⚡ SOLUCIÓN PARA LOCALTUNNEL / CORS
+      },
       body: JSON.stringify({
         nombre: data.nombre.trim(),
         usuario: data.usuario.trim(),

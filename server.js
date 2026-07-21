@@ -12,13 +12,15 @@ const perfilRoutes = require('./routes/perfilRoutes');
 const path = require('path');
 const app = express();
 
-// Permite que Vercel (HTTPS) haga peticiones a tu AWS (HTTP) sin ser bloqueado
+// Permite que Vercel (HTTPS) haga peticiones a tu servidor sin ser bloqueado
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  // ⚡ SE AGREGA 'bypass-tunnel-reminder' PARA QUE LOCALTUNNEL NO BLOQUEE LAS PETICIONES
+  allowedHeaders: ['Content-Type', 'Authorization', 'bypass-tunnel-reminder']
 }));
-// 1. AUMENTAR EL LÍMITE DE TAMAÑO PARA IMÁGENES BASE64 (20MB)
+
+// AUMENTAR EL LÍMITE DE TAMAÑO PARA IMÁGENES BASE64 (20MB)
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ limit: '20mb', extended: true }));
 
@@ -39,7 +41,6 @@ app.use('/api/perfil', perfilRoutes);
 
 const PORT = process.env.PORT || 8080;
 
-// 2. CORRECCIÓN EN EL CONSOLE.LOG (Uso de template literals ``)
 app.listen(PORT, () => {
   console.log(`PawCARE API corriendo en el puerto ${PORT}`);
 });
