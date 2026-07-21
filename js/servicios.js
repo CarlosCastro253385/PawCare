@@ -1,7 +1,20 @@
 document.addEventListener('DOMContentLoaded', () => {
     const URL_BASE = window.URL_BASE || '/api';
 
-    // 1. Convertir la imagen seleccionada a Base64
+    // -------------------------------------------------------------------
+    // 1. ELEMENTOS DEL DOM
+    // -------------------------------------------------------------------
+    const btnSave = document.getElementById('btn-save');
+    const inputName = document.getElementById('service-name');
+    const inputTitle = document.getElementById('service-title');
+    const inputDesc = document.getElementById('service-desc');
+    const inputPrice = document.getElementById('service-price');
+    const inputFileInput = document.getElementById('file-input');
+    const successModal = document.getElementById('success-modal');
+
+    // -------------------------------------------------------------------
+    // 2. FUNCIÓN PARA CONVERTIR IMAGEN A BASE64
+    // -------------------------------------------------------------------
     function imagenABase64(file) {
         return new Promise((resolve, reject) => {
             if (!file) return resolve(null);
@@ -12,43 +25,42 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 2. Función para Guardar / Crear Servicio
+    // -------------------------------------------------------------------
+    // 3. FUNCIÓN DE GUARDAR / CREAR SERVICIO
+    // -------------------------------------------------------------------
     async function guardarServicio(e) {
         if (e) e.preventDefault();
 
-        // Obtener inputs de la pantalla
-        const inputs = document.querySelectorAll('input, textarea');
-        let nombre = "", titulo = "", descripcion = "", precioRaw = "";
-        let archivoImagen = null;
+        // Extraer valores del HTML
+        const nombre = inputName ? inputName.value.trim() : "";
+        const titulo = inputTitle ? inputTitle.value.trim() : "";
+        const descripcion = inputDesc ? inputDesc.value.trim() : "";
+        const precioRaw = inputPrice ? inputPrice.value.trim() : "";
+        const archivoImagen = (inputFileInput && inputFileInput.files) ? inputFileInput.files[0] : null;
 
-        inputs.forEach(input => {
-            const ph = (input.placeholder || "").toLowerCase();
-            const type = input.type;
+        // Validaciones básicas antes de enviar
+        if (!nombre || !titulo) {
+            alert('Por favor, completa los campos obligatorios: Nombre y Detalles.');
+            return;
+        }
 
-            if (type === 'file') {
-                if (input.files && input.files[0]) archivoImagen = input.files[0];
-            } else if (ph.includes('nombre')) {
-                nombre = input.value.trim();
-            } else if (ph.includes('detalle') || ph.includes('título') || ph.includes('titulo')) {
-                titulo = input.value.trim();
-            } else if (ph.includes('descripción') || ph.includes('descripcion')) {
-                descripcion = input.value.trim();
-            } else if (ph.includes('precio')) {
-                precioRaw = input.value.trim();
-            }
-        });
-
-        // Extraer los precios (Grande, Mediano, Pequeño)
+        // Parsear precios desde el input
         const numeros = precioRaw.match(/\d+/g) || [0];
         const pGrande = parseFloat(numeros[0] || 0);
         const pMediano = parseFloat(numeros[1] || numeros[0] || 0);
         const pPequeno = parseFloat(numeros[2] || numeros[0] || 0);
 
         try {
-            // Convertir foto a Base64 si existe
+            // Deshabilitar botón temporalmente
+            if (btnSave) {
+                btnSave.disabled = true;
+                btnSave.innerText = "Procesando...";
+            }
+
+            // Convertir foto a Base64
             const fotoBase64 = await imagenABase64(archivoImagen);
 
-            // Estructura EXACTA esperada por tu controlador Node.js
+            // Payload exacto según tu controlador de Node.js
             const payload = {
                 nombre: nombre,
                 titulo: titulo,
@@ -59,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 precio_pequeno: pPequeno
             };
 
-            // Petición HTTP POST enviando JSON
+            // Petición POST enviando JSON
             const res = await fetch(`${URL_BASE}/servicios`, {
                 method: 'POST',
                 headers: {
@@ -74,21 +86,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(data.mensaje || `Error ${res.status}`);
             }
 
-            alert('¡Servicio registrado con éxito!');
-            location.reload();
+            // Mostrar modal de éxito si existe en el HTML
+            if (successModal) {
+                successModal.classList.remove('hidden');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                alert('¡Servicio registrado con éxito!');
+                location.reload();
+            }
 
         } catch (err) {
             console.error('Error al guardar:', err);
-            alert(`Error: ${err.message}`);
+            alert(`Error del servidor: ${err.message}`);
+        } finally {
+            if (btnSave) {
+                btnSave.disabled = false;
+                btnSave.innerText = "Aceptar";
+            }
         }
     }
 
-    // 3. Vincular botón de Aceptar / Procesar
-    const botonesProcesar = document.querySelectorAll('button, .button-aceptar, #procesarBtn, .btn-primary');
-    botonesProcesar.forEach(btn => {
-        const texto = btn.innerText.toLowerCase();
-        if (texto.includes('procesan') || texto.includes('aceptar') || texto.includes('guardar')) {
-            btn.addEventListener('click', guardarServicio);
-        }
-    });
+    // -------------------------------------------------------------------
+    // 4. VINCULAR EVENTO AL BOTÓN Y ENTRADAS DE FOTO
+    // -------------------------------------------------------------------
+    if (btnSave) {
+        btnSave.addEventListener('click', guardarServicio);
+    }
+
+    // Abrir selector de archivos al hacer clic en el área de imagen
+    const dropzone = document.getElementById('image-dropzone');
+    if (dropzone && inputFileInput) {
+        dropzone.addEventListener('click', () => inputFileInput.click());
+        
+        // Mostrar vista previa al seleccionar imagen
+        inputFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            const preview = document.getElementById('form-preview');
+            const icon = document.getElementById('upload-icon');
+            if (file && preview) {
+                preview.src = URL.createObjectURL(file);
+                preview.classList.remove('hidden');
+                if (icon) icon.classList.add('hidden');
+            }
+        });
+    }
 });
