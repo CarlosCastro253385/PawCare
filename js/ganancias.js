@@ -39,7 +39,6 @@ async function cargarDatosGraficas() {
     datosServicios.valores = dataServicio.valores;
     renderGraficaServicios();
 
-    // Reflejar tambien en las cajas de Ocupado/Libre si existen en tu HTML
     const capOcupado = document.getElementById('capacityOcupado');
     const capLibre = document.getElementById('capacityLibre');
     if (capOcupado) capOcupado.textContent = dataEspacio.ocupado;
@@ -47,13 +46,12 @@ async function cargarDatosGraficas() {
 
   } catch (error) {
     console.error('Error al cargar datos de ganancias:', error);
-    alert('No se pudieron cargar los datos de ganancias. Intenta de nuevo.');
   }
 }
 
-// ---------- Gráfica de pastel: Espacio en la guardería ----------
 function renderGraficaEspacio(dataEspacio) {
   const ctxEspacio = document.getElementById('espacioChart');
+  if (!ctxEspacio) return;
 
   espacioChart = new Chart(ctxEspacio, {
     type: 'doughnut',
@@ -81,20 +79,22 @@ function renderGraficaEspacio(dataEspacio) {
   });
 
   const leyendaEspacio = document.getElementById('espacioLeyenda');
-  leyendaEspacio.innerHTML = '';
-  [
-    { color: colorLleno, texto: `Ocupado: ${dataEspacio.ocupado}` },
-    { color: colorVacio, texto: `Libre: ${dataEspacio.libre}` },
-  ].forEach(({ color, texto }) => {
-    const li = document.createElement('li');
-    li.innerHTML = `<span class="legend-dot" style="background:${color}"></span>${texto}`;
-    leyendaEspacio.appendChild(li);
-  });
+  if (leyendaEspacio) {
+    leyendaEspacio.innerHTML = '';
+    [
+      { color: colorLleno, texto: `Ocupado: ${dataEspacio.ocupado}` },
+      { color: colorVacio, texto: `Libre: ${dataEspacio.libre}` },
+    ].forEach(({ color, texto }) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="legend-dot" style="background:${color}"></span>${texto}`;
+      leyendaEspacio.appendChild(li);
+    });
+  }
 }
 
-// ---------- Gráfica de barras: Ganancias mensuales ----------
 function renderGraficaGanancias() {
   const ctxGanancias = document.getElementById('gananciasChart');
+  if (!ctxGanancias) return;
 
   gananciasChart = new Chart(ctxGanancias, {
     type: 'bar',
@@ -129,9 +129,9 @@ function renderGraficaGanancias() {
   });
 }
 
-// ---------- Gráfica de pastel: Ingresos por servicio ----------
 function renderGraficaServicios() {
   const ctxServicios = document.getElementById('serviciosChart');
+  if (!ctxServicios) return;
 
   serviciosChart = new Chart(ctxServicios, {
     type: 'doughnut',
@@ -163,6 +163,7 @@ function renderGraficaServicios() {
 
 function actualizarLeyendaServicios() {
   const leyendaServicios = document.getElementById('serviciosLeyenda');
+  if (!leyendaServicios) return;
   leyendaServicios.innerHTML = '';
   datosServicios.etiquetas.forEach((texto, i) => {
     const li = document.createElement('li');
@@ -171,33 +172,23 @@ function actualizarLeyendaServicios() {
   });
 }
 
-// ---------- Botón "Agregar información" ----------
-const agregarBtn = document.getElementById('agregarBtn');
-if (agregarBtn) {
-  agregarBtn.addEventListener('click', () => {
-    alert('Aquí conectas tu formulario o modal para agregar información nueva.');
-  });
-}
-
-// ==============================================================
-// VISTA "EDITAR DATOS" — Conexión Real con Backend MySQL
-// ==============================================================
-
 const tabGraficasBtn = document.getElementById('tabGraficasBtn');
 const tabEditarBtn = document.getElementById('tabEditarBtn');
 const vistaGraficas = document.getElementById('vistaGraficas');
 const vistaEditar = document.getElementById('vistaEditar');
 
-function mostrarVista(nombre) {
-  const esGraficas = nombre === 'graficas';
-  vistaGraficas.hidden = !esGraficas;
-  vistaEditar.hidden = esGraficas;
-  tabGraficasBtn.classList.toggle('active', esGraficas);
-  tabEditarBtn.classList.toggle('active', !esGraficas);
-}
+if (tabGraficasBtn && tabEditarBtn) {
+  function mostrarVista(nombre) {
+    const esGraficas = nombre === 'graficas';
+    if (vistaGraficas) vistaGraficas.hidden = !esGraficas;
+    if (vistaEditar) vistaEditar.hidden = esGraficas;
+    tabGraficasBtn.classList.toggle('active', esGraficas);
+    tabEditarBtn.classList.toggle('active', !esGraficas);
+  }
 
-tabGraficasBtn.addEventListener('click', () => mostrarVista('graficas'));
-tabEditarBtn.addEventListener('click', () => mostrarVista('editar'));
+  tabGraficasBtn.addEventListener('click', () => mostrarVista('graficas'));
+  tabEditarBtn.addEventListener('click', () => mostrarVista('editar'));
+}
 
 const CAPACIDAD_TOTAL = 50;
 const contadores = { reservados: 12, ocupados: 20 };
@@ -225,45 +216,12 @@ document.querySelectorAll('.stepper-btn').forEach((boton) => {
 });
 actualizarBotonesStepper();
 
-const blockGrid = document.getElementById('blockGrid');
-const TOTAL_FILAS = 4;
-const TOTAL_COLUMNAS = 7;
-
-if (blockGrid) {
-  for (let i = 0; i < TOTAL_FILAS * TOTAL_COLUMNAS; i++) {
-    const bloque = document.createElement('button');
-    bloque.type = 'button';
-    bloque.className = 'data-block';
-    if (Math.random() > 0.4) bloque.classList.add('filled');
-    bloque.addEventListener('click', () => bloque.classList.toggle('filled'));
-    blockGrid.appendChild(bloque);
-  }
-}
-
-const agregarDatoBtn = document.getElementById('agregarDatoBtn');
-if (agregarDatoBtn) {
-  agregarDatoBtn.addEventListener('click', () => {
-    const nuevoBloque = document.createElement('button');
-    nuevoBloque.type = 'button';
-    nuevoBloque.className = 'data-block filled';
-    nuevoBloque.addEventListener('click', () => nuevoBloque.classList.toggle('filled'));
-    blockGrid.appendChild(nuevoBloque);
-  });
-}
-
-const guardarBtn = document.getElementById('guardarBtn');
-const confirmModal = document.getElementById('confirmModal');
 const confirmarBtn = document.getElementById('confirmarBtn');
-const cancelarBtn = document.getElementById('cancelarBtn');
+const confirmModal = document.getElementById('confirmModal');
 
-if (guardarBtn) {
-  guardarBtn.addEventListener('click', () => confirmModal.classList.add('active'));
-}
-
-// ---------- Confirmar y Guardar UNIFICADO ----------
 if (confirmarBtn) {
   confirmarBtn.addEventListener('click', async () => {
-    confirmModal.classList.remove('active');
+    if (confirmModal) confirmModal.classList.remove('active');
 
     const nuevaCapacidadTotal = contadores.reservados + contadores.ocupados;
 
@@ -279,7 +237,6 @@ if (confirmarBtn) {
     });
 
     try {
-      // Petición unificada enviando tabla + capacidad junta
       const respuesta = await fetch(`${API_BASE}/ganancias/registrar-ingresos-manuales`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -305,17 +262,6 @@ if (confirmarBtn) {
   });
 }
 
-if (cancelarBtn) {
-  cancelarBtn.addEventListener('click', () => confirmModal.classList.remove('active'));
-}
-
-if (confirmModal) {
-  confirmModal.addEventListener('click', (evento) => {
-    if (evento.target === confirmModal) confirmModal.classList.remove('active');
-  });
-}
-
-// ---------- Tabla de ingresos por servicio y mes ----------
 const ingresosPorServicio = [
   { nombre: 'Hospedaje', valores: Array(12).fill(0) },
   { nombre: 'Baño', valores: Array(12).fill(0) },
@@ -368,7 +314,6 @@ function renderizarTablaIngresos() {
       input.min = '0';
       input.step = '100';
       input.value = valor;
-      input.setAttribute('aria-label', `${servicio.nombre}, ${datosGanancias.meses[indiceMes]}`);
       input.addEventListener('input', () => {
         servicio.valores[indiceMes] = Math.max(0, Number(input.value) || 0);
         actualizarTotalesTabla();
