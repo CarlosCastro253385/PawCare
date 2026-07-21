@@ -99,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${anioActual}-${String(indiceMes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
     }
 
+    // Carga las reservas del usuario especifico logueado
     async function cargarReservasDelMes() {
         try {
             const idUsuario = sesion.id_usuario || null;
@@ -176,7 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('.dia').forEach(d => d.classList.remove('dia--seleccionado'));
                 btn.classList.add('dia--seleccionado');
 
-                // Si se configuró un modal para ver detalles de su reservación
                 if (registrosDelDia.length > 0 && contenidoDetalleCita && modalDetalleCita) {
                     const cita = registrosDelDia[0];
                     contenidoDetalleCita.innerHTML = `
@@ -216,20 +216,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Carga flexible de servicios para el usuario
     async function cargarServiciosDisponibles() {
         if (!serviciosCheckboxes) return;
         try {
             const respuesta = await apiFetch('/servicios', { method: 'GET' });
-            const servicios = respuesta.servicios || respuesta.data || (Array.isArray(respuesta) ? respuesta : []);
+            
+            let servicios = [];
+            if (Array.isArray(respuesta)) {
+                servicios = respuesta;
+            } else if (Array.isArray(respuesta.servicios)) {
+                servicios = respuesta.servicios;
+            } else if (Array.isArray(respuesta.data)) {
+                servicios = respuesta.data;
+            } else if (Array.isArray(respuesta.datos)) {
+                servicios = respuesta.datos;
+            }
 
-            if (!Array.isArray(servicios) || servicios.length === 0) {
+            if (servicios.length === 0) {
                 serviciosCheckboxes.innerHTML = '<p style="color:#888; font-size:14px;">No hay servicios adicionales disponibles por el momento.</p>';
                 return;
             }
 
             serviciosCheckboxes.innerHTML = servicios.map(srv => {
-                const id = srv.id_servicio || srv.id;
-                const nombre = srv.nombre || 'Servicio';
+                const id = srv.id_servicio || srv.id || srv.idServicio || srv._id;
+                const nombre = srv.nombre || srv.nombre_servicio || srv.servicio || 'Servicio';
+
                 return `
                     <label class="checkbox-servicio" style="display: inline-flex; align-items: center; gap: 8px; margin-right: 15px; margin-bottom: 10px; cursor: pointer; font-size: 14px; background: rgba(255,255,255,0.6); padding: 6px 12px; border-radius: 6px; border: 1px solid #ddd;">
                         <input type="checkbox" name="servicio" value="${id}">
@@ -271,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Inicializar la vista
+    // Inicializar la vista de usuario
     actualizarCalendario();
     cargarServiciosDisponibles();
 

@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // Aseguramos que apiFetch esté definido en esta pantalla con la ruta base correcta
+    // Helper para llamadas a la API de la vista Admin
     if (typeof apiFetch === 'undefined') {
         window.apiFetch = async function(endpoint, opciones = {}) {
             const urlCompleta = `${window.URL_BASE || '/api'}${endpoint}`;
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnCerrarExito = document.getElementById('btnCerrarExito');
     const btnCerrarError = document.getElementById('btnCerrarError');
 
-    // Elementos del modal de detalle / eliminación
+    // Elementos del modal de detalle y eliminación del Admin
     const modalDetalleCita = document.getElementById('modalDetalleCita');
     const contenidoDetalleCita = document.getElementById('contenidoDetalleCita');
     const btnEliminarCita = document.getElementById('btnEliminarCita');
@@ -87,6 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${anioActual}-${mesConCero}-${diaConCero}`;
     }
 
+    // Cargar TODAS las reservaciones globales del mes (Admin)
     async function cargarReservasDelMes() {
         try {
             const respuesta = await apiFetch(`/citas?mes=${indiceMes + 1}&anio=${anioActual}`, { method: 'GET' });
@@ -133,6 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Filtro de búsqueda en el calendario
     const inputBuscar = document.querySelector('input[placeholder="Buscar reservacion..."]');
     if (inputBuscar) {
         inputBuscar.addEventListener('input', async (e) => {
@@ -227,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Lógica para procesar la eliminación física de la reserva
+    // Eliminación de reservas desde la vista del Administrador
     if (btnEliminarCita) {
         btnEliminarCita.addEventListener('click', async () => {
             if (!citaSeleccionadaId) return;
@@ -237,12 +239,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnEliminarCita.textContent = 'Eliminando...';
                 
                 try {
-                    await apiFetch(`/citas/${citaSeleccionadaId}`, {
-                        method: 'DELETE'
-                    });
-                    
+                    await apiFetch(`/citas/${citaSeleccionadaId}`, { method: 'DELETE' });
                     exitoEliminacion();
-                    
                 } catch (err) {
                     console.error("Error al borrar:", err.message);
                     alert('No se pudo eliminar la reservación: ' + err.message);
@@ -280,26 +278,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // -------------------------------------------------------------------
-    // FUNCIÓN DE SERVICIOS OPTIMIZADA (Soporta múltiples respuestas)
-    // -------------------------------------------------------------------
+    // Carga de Servicios ultra-flexible (Detecta cualquier formato JSON)
     async function cargarServiciosDisponibles() {
         if (!serviciosCheckboxes) return;
         
         try {
             const respuesta = await apiFetch('/servicios', { method: 'GET' });
             
-            // Flexibilidad para obtener la lista sin importar el formato del JSON
-            const servicios = respuesta.servicios || respuesta.data || (Array.isArray(respuesta) ? respuesta : []);
+            let servicios = [];
+            if (Array.isArray(respuesta)) {
+                servicios = respuesta;
+            } else if (Array.isArray(respuesta.servicios)) {
+                servicios = respuesta.servicios;
+            } else if (Array.isArray(respuesta.data)) {
+                servicios = respuesta.data;
+            } else if (Array.isArray(respuesta.datos)) {
+                servicios = respuesta.datos;
+            }
 
-            if (!Array.isArray(servicios) || servicios.length === 0) {
+            if (servicios.length === 0) {
                 serviciosCheckboxes.innerHTML = '<p style="color:#888; font-size: 14px;">No hay servicios creados aún en el catálogo.</p>';
                 return;
             }
 
             serviciosCheckboxes.innerHTML = servicios.map(srv => {
-                const id = srv.id_servicio || srv.id;
-                const nombre = srv.nombre || 'Servicio sin nombre';
+                const id = srv.id_servicio || srv.id || srv.idServicio || srv._id;
+                const nombre = srv.nombre || srv.nombre_servicio || srv.servicio || 'Servicio sin nombre';
+
                 return `
                     <label class="checkbox-servicio" style="display: inline-flex; align-items: center; gap: 8px; margin-right: 15px; margin-bottom: 10px; cursor: pointer; font-size: 14px; background: rgba(255,255,255,0.6); padding: 6px 12px; border-radius: 6px; border: 1px solid #ddd;">
                         <input type="checkbox" name="servicio" value="${id}">
@@ -342,16 +347,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Inicializar datos al cargar
+    // Inicializar
     actualizarCalendario();
     cargarServiciosDisponibles();
 
+    // Crear reservación desde Admin
     if (formReserva) {
         formReserva.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const diaIngreso = parseInt(document.getElementById('fechaIngreso').value);
             const diaSalida = parseInt(document.getElementById('fechaSalida').value);
+
+            if (!diaIngreso || !diaSalida) {
+                mostrarError('Por favor selecciona las fechas de ingreso y salida.');
+                return;
+            }
 
             if (diaSalida < diaIngreso) {
                 mostrarError('La fecha de salida no puede ser antes que la fecha de ingreso.');
