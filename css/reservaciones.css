@@ -398,3 +398,47 @@ body {
 .btn-modal:hover {
     background-color: #1e2b3a;
 }
+
+/* ==========================================================================
+   CORRECCIÓN CALENDARIO Y MODALES
+   ========================================================================== */
+
+/* Altura y distribución fija para que los días no se deformen con texto largo */
+.dias-grid .dia {
+    min-height: 85px;
+    max-height: 100px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 8px 4px;
+    box-sizing: border-box;
+    position: relative;
+}
+
+/* Estilo de la etiqueta de la mascota para que no rompa el diseño */
+.dia .cita-evento {
+    background-color: #d2e3fc;
+    color: #1a73e8;
+    font-size: 0.70rem;
+    padding: 2px 4px;
+    border-radius: 4px;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    text-align: center;
+}
+
+/* Ocultar el puntito indicador inferior si ya mostramos el nombre de la mascota */
+.dia--ocupado::after {
+    display: none;
+}
+
+/* Asegurar compatibilidad absoluta con la clase .mostrar en tus modales */
+.modal-overlay.mostrar {
+    display: flex !important;
+    opacity: 1;
+    pointer-events: auto;
+}
