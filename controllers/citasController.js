@@ -1,16 +1,17 @@
 const pool = require('../config/db');
 
-// GET /api/citas?mes=7&anio=2026&id_usuario=X
+const pool = require('../config/db');
+
+// GET /api/citas
 async function obtenerCitas(req, res) {
   const { mes, anio, id_usuario } = req.query;
 
   try {
-    // Se usa LEFT JOIN para no perder citas si el cliente/usuario no existe en la tabla CLIENTE
     let consulta = `
       SELECT 
         ci.id_cita, 
-        ci.fecha_entrada, 
-        ci.fecha_salida, 
+        DATE_FORMAT(ci.fecha_entrada, '%Y-%m-%d') AS fecha_entrada, 
+        DATE_FORMAT(ci.fecha_salida, '%Y-%m-%d') AS fecha_salida, 
         ci.estado, 
         ci.observaciones,
         COALESCE(m.nombre, 'Mascota') AS nombre_mascota, 
@@ -24,14 +25,15 @@ async function obtenerCitas(req, res) {
     `;
     const parametros = [];
 
-    // Filtro por mes y año asegurando formato exacto (ej. 2026-07)
+    // Filtro flexible por mes y año
     if (mes && anio) {
-      const mesFormateado = String(mes).padStart(2, '0');
-      consulta += " AND (DATE_FORMAT(ci.fecha_entrada, '%Y-%m') = ? OR DATE_FORMAT(ci.fecha_salida, '%Y-%m') = ?)";
-      parametros.push(`${anio}-${mesFormateado}`, `${anio}-${mesFormateado}`);
+      consulta += ` AND (
+        (MONTH(ci.fecha_entrada) = ? AND YEAR(ci.fecha_entrada) = ?) OR
+        (MONTH(ci.fecha_salida) = ? AND YEAR(ci.fecha_salida) = ?)
+      )`;
+      parametros.push(Number(mes), Number(anio), Number(mes), Number(anio));
     }
 
-    // Filtra si se especifica un usuario
     if (id_usuario) {
       consulta += ' AND (ci.id_usuario = ? OR ci.id_cliente = ?)';
       parametros.push(id_usuario, id_usuario);

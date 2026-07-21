@@ -1,16 +1,27 @@
 // controllers/serviciosController.js
 const pool = require('../config/db');
 
+const pool = require('../config/db');
+
 // GET /api/servicios
 async function obtenerServicios(req, res) {
   try {
-    const [servicios] = await pool.query('SELECT * FROM SERVICIO ORDER BY id_servicio');
+    const [servicios] = await pool.query('SELECT * FROM SERVICIO ORDER BY id_servicio ASC');
+    
+    // Log en el servidor para verificar que la DB realmente tiene datos
+    console.log(`[SERVICIOS] Se encontraron ${servicios.length} servicios en la DB.`);
+    
     return res.json({ ok: true, servicios });
   } catch (error) {
     console.error('Error al obtener servicios:', error);
-    return res.status(500).json({ ok: false, mensaje: 'Error del servidor.' });
+    return res.status(500).json({ ok: false, mensaje: 'Error al consultar servicios en la base de datos.' });
   }
 }
+
+module.exports = {
+  obtenerServicios,
+  // ... mantén tus funciones de crearServicio, actualizarServicio y eliminarServicio
+};
 
 // POST /api/servicios
 // Espera: { nombre, titulo, descripcion, foto, precio_grande, precio_mediano, precio_pequeno }
