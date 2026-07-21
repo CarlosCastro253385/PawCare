@@ -1,121 +1,88 @@
-<!-- Vista del Formulario de Reservas -->
-<div id="vistaFormulario" class="vista">
-    <div class="glass-panel">
-        <div class="content-header">
-            <h1>Reservaciones</h1>
-        </div>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PawCare - Administración de Servicios</title>
+    <link rel="stylesheet" href="css/layout-common.css">
+    <link rel="stylesheet" href="css/servicios.css">
+    <link rel="stylesheet" href="css/sidebar-common.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
 
-        <!-- EL FORMULARIO DEBE TENER id="formReserva" -->
-        <form id="formReserva">
-            <div class="form-fila">
-                <div class="form-grupo">
-                    <label>Mes:</label>
-                    <select id="mesReserva" class="select-fecha">
-                        <option value="Enero">Enero</option>
-                        <option value="Febrero">Febrero</option>
-                        <option value="Marzo">Marzo</option>
-                        <option value="Abril">Abril</option>
-                        <option value="Mayo">Mayo</option>
-                        <option value="Junio">Junio</option>
-                        <option value="Julio">Julio</option>
-                        <option value="Agosto">Agosto</option>
-                        <option value="Septiembre">Septiembre</option>
-                        <option value="Octubre">Octubre</option>
-                        <option value="Noviembre" selected>Noviembre</option>
-                        <option value="Diciembre">Diciembre</option>
-                    </select>
-                </div>
-                <div class="form-grupo">
-                    <label>Fecha de ingreso:</label>
-                    <select id="fechaIngreso" class="select-fecha">
-                        <!-- Se llena dinámicamente con JS -->
-                    </select>
-                </div>
-                <div class="form-grupo">
-                    <label>Fecha de salida:</label>
-                    <select id="fechaSalida" class="select-fecha">
-                        <!-- Se llena dinámicamente con JS -->
-                    </select>
-                </div>
-            </div>
+    <div class="app-container">
+        <!-- MENÚ LATERAL DEL ADMINISTRADOR -->
+        <aside class="sidebar" id="sidebar">
+            <button class="sidebar-toggle" aria-label="Abrir/cerrar menú"><i class="fa-solid fa-bars"></i></button>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-house"></i></span><span class="sidebar-label">Inicio</span></a>
+                <a href="servicios.html" class="sidebar-link active"><span class="sidebar-icon"><i class="fa-solid fa-star"></i></span><span class="sidebar-label">Servicios</span></a>
+                <a href="reservaciones.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-calendar-days"></i></span><span class="sidebar-label">Reservas</span></a>
+                <a href="mascotas.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-paw"></i></span><span class="sidebar-label">Mascotas</span></a>
+                <a href="ganancias.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-wallet"></i></span><span class="sidebar-label">Ganancias</span></a>
+            </nav>
+            <a href="perfil.html" class="sidebar-admin">
+                <span class="sidebar-icon"><img class="icono" src="img/usergenerall.png" alt=""></span>
+                <span class="sidebar-label">Administrador</span>
+            </a>
+        </aside>
 
-            <div class="form-grupo" style="margin-bottom: 15px;">
-                <label>Nombre del cliente:</label>
-                <div class="campo-editable">
-                    <input type="text" id="nombreCliente" placeholder="Nombre del cliente">
-                </div>
-            </div>
+        <!-- CONTENIDO PRINCIPAL -->
+        <main class="main-content">
+            <div class="glass-panel">
+                <header class="content-header">
+                    <h2>Gestión de Servicios</h2>
+                    <!-- BOTÓN PARA AGREGAR SERVICIO (Exclusivo del Administrador) -->
+                    <button id="btnAgregarServicio" class="btn-primario">+ Agregar Servicio</button>
+                </header>
 
-            <div class="form-grupo" style="margin-bottom: 15px;">
-                <label>Numero de telefono:</label>
-                <div class="campo-editable">
-                    <input type="text" id="telefonoCliente" placeholder="Teléfono">
-                </div>
-            </div>
-
-            <div class="form-grupo" style="margin-bottom: 15px;">
-                <label>Nombre de la mascota:</label>
-                <div class="campo-editable">
-                    <input type="text" id="nombreMascota" placeholder="Nombre de la mascota">
-                </div>
-            </div>
-
-            <div class="form-fila">
-                <div class="form-grupo">
-                    <label>Edad:</label>
-                    <div class="campo-editable">
-                        <input type="text" id="edadMascota" placeholder="Edad">
+                <!-- VISTA: CATÁLOGO DE SERVICIOS -->
+                <section id="view-catalog" class="content-view">
+                    <div class="services-list" id="services-container">
+                        <!-- Las tarjetas se generan dinámicamente con JS -->
                     </div>
-                </div>
-                <div class="form-grupo">
-                    <label>Raza:</label>
-                    <div class="campo-editable">
-                        <input type="text" id="razaMascota" placeholder="Raza">
-                    </div>
-                </div>
+                </section>
             </div>
-
-            <div class="form-acciones">
-                <button type="button" id="btnCancelar" class="btn-secundario">Cancelación</button>
-                <!-- EL BOTÓN DEBE SER type="submit" PARA ACTIVAR EL GUARDADO -->
-                <button type="submit" class="btn-primario">Guardar reservacion</button>
-            </div>
-        </form>
+        </main>
     </div>
-</div>
 
-<!-- ========================================================================== -->
-<!-- MODALES (Colócalos antes de cerrar el <body>) -->
-<!-- ========================================================================== -->
-
-<!-- Modal de Éxito -->
-<div id="modalExito" class="modal-overlay">
-    <div class="modal-box modal-box--exito">
-        <h2>¡Éxito!</h2>
-        <p>La reservación se ha guardado correctamente.</p>
-        <button id="btnCerrarExito" class="btn-modal">Aceptar</button>
-    </div>
-</div>
-
-<!-- Modal de Error (Fechas inválidas) -->
-<div id="modalError" class="modal-overlay">
-    <div class="modal-box modal-box--error">
-        <h2>Atención</h2>
-        <p>La fecha de salida no puede ser anterior a la de ingreso.</p>
-        <button id="btnCerrarError" class="btn-modal">Entendido</button>
-    </div>
-</div>
-
-<!-- Modal de Detalle / Eliminar Cita (Calendario) -->
-<div id="modalDetalleCita" class="modal-overlay">
-    <div class="modal-box">
-        <h2>Detalles de la Cita</h2>
-        <div id="contenidoDetalleCita" style="text-align: left; margin-bottom: 20px;">
-            <!-- Contenido inyectado por JS -->
-        </div>
-        <div style="display: flex; justify-content: space-between; gap: 10px;">
-            <button id="btnEliminarCita" class="btn-modal" style="background-color: #e71d36;">Eliminar Cita</button>
-            <button id="btnCerrarDetalle" class="btn-modal" style="background-color: #607285;">Cerrar</button>
+    <!-- MODAL PARA AGREGAR / EDITAR SERVICIO -->
+    <div id="modalServicio" class="modal-overlay" style="display: none;">
+        <div class="modal-box">
+            <h2>Nuevo Servicio</h2>
+            <form id="formServicio">
+                <div class="form-grupo" style="margin-bottom: 15px;">
+                    <label>Nombre del servicio:</label>
+                    <input type="text" id="nombreServicio" placeholder="Ej. Baño y Corte" required style="width: 100%; padding: 8px;">
+                </div>
+                <div class="form-grupo" style="margin-bottom: 15px;">
+                    <label>Descripción:</label>
+                    <textarea id="descServicio" placeholder="Descripción breve" style="width: 100%; padding: 8px;"></textarea>
+                </div>
+                <div class="form-grupo" style="margin-bottom: 15px;">
+                    <label>Detalles (uno por línea):</label>
+                    <textarea id="detallesServicio" placeholder="Baño con shampoo&#10;Corte de pelo&#10;Limpieza de oídos" style="width: 100%; padding: 8px;"></textarea>
+                </div>
+                <div class="form-grupo" style="margin-bottom: 15px;">
+                    <label>Precios (Grande / Mediano / Chico):</label>
+                    <input type="text" id="precioServicio" placeholder="Ej. 300 / 250 / 200" required style="width: 100%; padding: 8px;">
+                </div>
+                <div class="form-grupo" style="margin-bottom: 20px;">
+                    <label>Imagen del servicio:</label>
+                    <input type="file" id="imagenServicio" accept="image/*" style="width: 100%;">
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" id="btnCerrarModal" class="btn-secundario">Cancelar</button>
+                    <button type="submit" class="btn-primario">Guardar Servicio</button>
+                </div>
+            </form>
         </div>
     </div>
-</div>t
+
+    <!-- SCRIPTS -->
+    <script src="js/config.js"></script>
+    <script src="js/sidebar-common.js"></script>
+    <script src="js/servicios.js"></script>
+</body>
+</html>
