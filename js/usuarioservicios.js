@@ -1,60 +1,81 @@
-// Función para guardar el servicio desde el panel de administración
-async function guardarServicio(event) {
-  if (event) event.preventDefault();
+document.addEventListener('DOMContentLoaded', () => {
+    const formServicio = document.querySelector('form') || document;
+    const btnAceptar = document.querySelector('.button-aceptar') || document.querySelector('button[type="submit"]') || document.getElementById('procesarBtn');
 
-  // 1. Capturar elementos del formulario
-  const nombreInput = document.getElementById('nombreServicio') || document.querySelector('input[placeholder*="Nombre"]');
-  const detallesInput = document.getElementById('detallesServicio') || document.querySelector('textarea[placeholder*="Detalles"]');
-  const descripcionInput = document.getElementById('descripcionServicio') || document.querySelector('textarea[placeholder*="descripción"]');
-  const precioInput = document.getElementById('precioServicio') || document.querySelector('input[placeholder*="Precio"]');
-  const imagenInput = document.getElementById('imagenServicio') || document.querySelector('input[type="file"]');
+    // Función para procesar y enviar el formulario
+    async function guardarServicio(e) {
+        if (e) e.preventDefault();
 
-  // 2. Extraer y procesar el precio
-  // Si en la casilla escribes "$350 / $280 / $200" o "350/280/200", los dividimos
-  const textoPrecio = precioInput.value;
-  const preciosEncontrados = textoPrecio.match(/\d+/g) || [];
+        // Obtener inputs por sus ubicaciones/placeholders
+        const inputs = document.querySelectorAll('input, textarea');
+        let nombre = "", detalles = "", descripcion = "", precioRaw = "";
+        let archivoImagen = null;
 
-  // Asignar precios según los valores encontrados (o un valor por defecto)
-  const precioGrande = parseFloat(preciosEncontrados[0] || 350);
-  const precioMediano = parseFloat(preciosEncontrados[1] || preciosEncontrados[0] || 280);
-  const precioChico = parseFloat(preciosEncontrados[2] || preciosEncontrados[0] || 200);
+        // Búsqueda inteligente de inputs en la pantalla
+        inputs.forEach(input => {
+            const ph = (input.placeholder || "").toLowerCase();
+            const type = input.type;
 
-  // 3. Crear el FormData con los nombres EXACTOS de campos que espera tu BD
-  const formData = new FormData();
-  formData.append('nombre', nombreInput.value.trim());
-  formData.append('descripcion', descripcionInput.value.trim());
-  
-  // Guardamos el texto de detalles en 'titulo_corto' (como lo lee tu renderUserCatalog)
-  formData.append('titulo_corto', detallesInput.value.trim()); 
-  
-  // Enviamos los 3 precios individuales que tu base de datos requiere
-  formData.append('precio_grande', precioGrande);
-  formData.append('precio_mediano', precioMediano);
-  formData.append('precio_chico', precioChico);
+            if (type === 'file') {
+                if (input.files && input.files[0]) archivoImagen = input.files[0];
+            } else if (ph.includes('nombre')) {
+                nombre = input.value.trim();
+            } else if (ph.includes('detalle')) {
+                detalles = input.value.trim();
+            } else if (ph.includes('descripción') || ph.includes('descripcion')) {
+                descripcion = input.value.trim();
+            } else if (ph.includes('precio')) {
+                precioRaw = input.value.trim();
+            }
+        });
 
-  // Solo adjuntar si el usuario seleccionó una imagen
-  if (imagenInput && imagenInput.files && imagenInput.files[0]) {
-    formData.append('imagen', imagenInput.files[0]);
-  }
+        // Extraer números para los precios
+        const numeros = precioRaw.match(/\d+/g) || [250];
+        const pGrande = parseFloat(numeros[0] || 250);
+        const pMediano = parseFloat(numeros[1] || numeros[0] || 200);
+        const pChico = parseFloat(numeros[2] || numeros[0] || 150);
 
-  // 4. Enviar Petición al Backend
-  try {
-    const respuesta = await fetch(`${URL_BASE}/servicios`, {
-      method: 'POST',
-      body: formData // NOTA: No colocar 'Content-Type' header cuando se usa FormData
-    });
+        // Armar el FormData
+        const formData = new FormData();
+        formData.append('nombre', nombre);
+        formData.append('descripcion', descripcion);
+        formData.append('titulo_corto', detalles);
+        formData.append('precio_grande', pGrande);
+        formData.append('precio_mediano', pMediano);
+        formData.append('precio_chico', pChico);
+        formData.append('precio', pGrande); // Por si el backend busca 'precio' genérico
 
-    const data = await respuesta.json().catch(() => ({}));
+        if (archivoImagen) {
+            formData.append('imagen', archivoImagen);
+        }
 
-    if (!respuesta.ok) {
-      throw new Error(data.message || data.error || `Error ${respuesta.status}`);
+        try {
+            // NOTA CLAVE: Al enviar FormData, NO se pone header 'Content-Type'
+            const res = await fetch(`${URL_BASE}/servicios`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                // Muestra la razón EXACTA enviada por el backend
+                const errorMsg = data.message || data.error || JSON.stringify(data) || `Error ${res.status}`;
+                throw new Error(errorMsg);
+            }
+
+            alert('¡Servicio guardado con éxito!');
+            location.reload();
+
+        } catch (err) {
+            console.error('Error detallado:', err);
+            alert(`Error del servidor (400): ${err.message}`);
+        }
     }
 
-    alert('¡Servicio registrado con éxito!');
-    location.reload();
-
-  } catch (error) {
-    console.error('Error al guardar servicio:', error);
-    alert(`No se pudo guardar: ${error.message}`);
-  }
-}
+    // Evento al presionar el botón de Aceptar/Procesar
+    const aceptarBtn = document.getElementById('aceptarBtn') || document.querySelector('.btn-primary') || document.querySelector('button');
+    if (aceptarBtn) {
+        aceptarBtn.addEventListener('click', guardarServicio);
+    }
+});
