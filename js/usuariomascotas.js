@@ -1,5 +1,3 @@
-const URL_BASE = 'http://107.22.53.32:8080/api';
-
 let petsData = [];
 let currentPetId = null;
 const viewGrid = document.getElementById('view-grid');

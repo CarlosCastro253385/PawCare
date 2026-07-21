@@ -1,6 +1,3 @@
-const API_BASE = 'http://107.22.53.32:8080/api';
-
-// Colores de la marca PawCARE
 const colorVacio = '#2f4257';
 const colorLleno = '#4888b2';
 const colorBarra = '#5caee4';
@@ -15,7 +12,6 @@ let gananciasChart, serviciosChart, espacioChart;
 let datosGanancias = { meses: MESES, valores: Array(12).fill(0) };
 let datosServicios = { etiquetas: [], valores: [] };
 
-// ---------- Carga inicial de datos reales ----------
 async function cargarDatosGraficas() {
   try {
     const anio = new Date().getFullYear();

@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     if (typeof apiFetch === 'undefined') {
         window.apiFetch = async function(endpoint, opciones = {}) {
-            const URL_BASE = 'http://107.22.53.32:8080/api'; 
             const urlCompleta = `${URL_BASE}${endpoint}`;
             
             opciones.headers = {

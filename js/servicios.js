@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    const URL_BASE = 'http://107.22.53.32:8080/api';
     let editandoId = null;
 
     async function apiFetch(endpoint, opciones = {}) {

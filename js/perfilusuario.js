@@ -1,4 +1,3 @@
-// PAWCARE/js/perfil.js
 const profileForm = document.getElementById('profile-form');
 const btnEdit = document.getElementById('btn-edit');
 const btnCancel = document.getElementById('btn-cancel');

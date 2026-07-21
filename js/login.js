@@ -1,7 +1,3 @@
-
-// js/login.js
-const API_URL = 'http://107.22.53.32:8080';
- 
 const form = document.getElementById('loginForm');
 const usernameInput = document.getElementById('username');
 const passwordInput = document.getElementById('password');

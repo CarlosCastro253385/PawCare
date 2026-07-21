@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    const URL_BASE = 'http://107.22.53.32:8080/api';
     const servicesContainer = document.getElementById('services-container');
     let servicesData = [];
 

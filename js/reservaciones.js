@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Aseguramos que apiFetch esté definido en esta pantalla con la ruta base correcta
     if (typeof apiFetch === 'undefined') {
         window.apiFetch = async function(endpoint, opciones = {}) {
-            const URL_BASE = 'http://107.22.53.32:8080/api'; 
             const urlCompleta = `${URL_BASE}${endpoint}`;
             
             opciones.headers = {

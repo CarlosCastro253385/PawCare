@@ -1,9 +1,3 @@
-// js/registro.js
-// Ahora este archivo crea la cuenta en tu base de datos real (vía tu API)
-// en vez de guardarla en localStorage.
-
-const API_URL = 'http://107.22.53.32:8080'; // misma URL que en login.js
-
 const registerForm = document.getElementById('registerForm');
 const formMessage = document.getElementById('formMessage');
 
