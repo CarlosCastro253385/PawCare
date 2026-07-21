@@ -3,7 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Helper para llamadas a la API de la vista Admin
     if (typeof apiFetch === 'undefined') {
         window.apiFetch = async function(endpoint, opciones = {}) {
-            const urlCompleta = `${window.URL_BASE || '/api'}${endpoint}`;
+            const baseUrl = typeof API_BASE !== 'undefined' ? API_BASE : (window.URL_BASE || '/api');
+            const urlCompleta = `${baseUrl}${endpoint}`;
             
             opciones.headers = {
                 'Content-Type': 'application/json',
@@ -68,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     const anioActual = new Date().getFullYear();
     let indiceMes = mesReserva ? meses.indexOf(mesReserva.value) : new Date().getMonth();
+    if (indiceMes === -1) indiceMes = new Date().getMonth();
     
     let diasOcupados = new Set();
     let citasDelMesDetalle = [];
@@ -87,136 +89,56 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${anioActual}-${mesConCero}-${diaConCero}`;
     }
 
-async function cargarReservasDelMes() {
-    try {
-        const idUsuario = sesion.id_usuario || null;
-        
-        // Si no hay id_usuario o es vista admin, pedimos todas
-        let url = `/citas?mes=${indiceMes + 1}&anio=${anioActual}`;
-        if (idUsuario) {
-            url += `&id_usuario=${idUsuario}`;
-        }
-
-        const respuesta = await apiFetch(url, { method: 'GET' });
-        
-        diasOcupados = new Set();
-        citasDelMesDetalle = [];
-        
-        const listaCitas = respuesta.citas || respuesta.data || (Array.isArray(respuesta) ? respuesta : []); 
-        if (!Array.isArray(listaCitas)) return;
-
-        listaCitas.forEach(cita => {
-            const fEntrada = cita.fecha_entrada || cita.fechaEntrada;
-            const fSalida = cita.fecha_salida || cita.fechaSalida;
-
-            if (fEntrada && fSalida) {
-                // Forzamos split por '-' directamente para evitar desfasamientos UTC de new Date()
-                const partesEntrada = fEntrada.split('T')[0].split('-');
-                const partesSalida = fSalida.split('T')[0].split('-');
-
-                const anioEntrada = parseInt(partesEntrada[0], 10);
-                const mesEntrada = parseInt(partesEntrada[1], 10);
-                const diaInicio = parseInt(partesEntrada[2], 10);
-
-                const diaFin = parseInt(partesSalida[2], 10);
-
-                // Si la cita pertenece al año y mes que se está viendo
-                if (anioEntrada === anioActual && mesEntrada === (indiceMes + 1)) {
-                    for (let d = diaInicio; d <= diaFin; d++) {
-                        diasOcupados.add(d);
-                        citasDelMesDetalle.push({
-                            id_cita: cita.id_cita || cita.id,
-                            dia: d,
-                            mascota: cita.nombre_mascota || 'Mascota',
-                            cliente: cita.nombre_cliente || sesion.nombre || 'Cliente',
-                            telefono: cita.telefono_cliente || sesion.telefono || 'Sin teléfono',
-                            fechaEntrada: fEntrada.split('T')[0],
-                            fechaSalida: fSalida.split('T')[0],
-                            estado: cita.estado || 'Confirmada'
-                        });
-                    }
-                }
-            }
-        });
-    } catch (err) {
-        console.warn('Error al cargar reservaciones:', err.message);
-        diasOcupados = new Set();
-        citasDelMesDetalle = [];
-    }
-}
-
-function generarCalendario() {
-    if (!diasGrid) return;
-    diasGrid.innerHTML = '';
-
-    // Días en blanco al inicio del mes
-    for (let i = 0; i < obtenerPrimerDiaOffset(); i++) {
-        const vacio = document.createElement('div');
-        vacio.className = 'dia dia--vacio';
-        diasGrid.appendChild(vacio);
-    }
-
-    // Dibujar días del mes
-    for (let dia = 1; dia <= obtenerDiasEnMes(); dia++) {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'dia';
-        btn.textContent = dia;
-        
-        const registrosDelDia = citasDelMesDetalle.filter(c => c.dia === dia);
-
-        // SI EL DÍA ESTÁ EN EL SET DE OCUPADOS, APLICAR CLASE CSS
-        if (diasOcupados.has(dia)) {
-            btn.classList.add('dia--ocupado'); // <-- Esta clase le da el color/estilo visual
-            if (registrosDelDia.length > 0) {
-                btn.title = registrosDelDia.map(r => `Reserva: ${r.mascota} (${r.estado})`).join('\n');
-            }
-        }
-        
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.dia').forEach(d => d.classList.remove('dia--seleccionado'));
-            btn.classList.add('dia--seleccionado');
-
-            if (registrosDelDia.length > 0 && contenidoDetalleCita && modalDetalleCita) {
-                const cita = registrosDelDia[0];
-                contenidoDetalleCita.innerHTML = `
-                    <p><strong>Mascota:</strong> ${cita.mascota}</p>
-                    <p><strong>Fecha de Ingreso:</strong> ${cita.fechaEntrada}</p>
-                    <p><strong>Fecha de Salida:</strong> ${cita.fechaSalida}</p>
-                    <p><strong>Estado:</strong> <span class="badge">${cita.estado}</span></p>
-                `;
-                modalDetalleCita.classList.add('mostrar');
-            }
-        });
-
-        diasGrid.appendChild(btn);
-    }
-}
-    // Filtro de búsqueda en el calendario
-    const inputBuscar = document.querySelector('input[placeholder="Buscar reservacion..."]');
-    if (inputBuscar) {
-        inputBuscar.addEventListener('input', async (e) => {
-            const termino = e.target.value.trim().toLowerCase();
+    async function cargarReservasDelMes() {
+        try {
+            const url = `/citas?mes=${indiceMes + 1}&anio=${anioActual}`;
+            const respuesta = await apiFetch(url, { method: 'GET' });
             
-            if (termino === '') {
-                await actualizarCalendario();
-                return;
-            }
+            diasOcupados = new Set();
+            citasDelMesDetalle = [];
+            
+            const listaCitas = respuesta.citas || respuesta.data || (Array.isArray(respuesta) ? respuesta : []); 
+            if (!Array.isArray(listaCitas)) return;
 
-            const botonesDias = document.querySelectorAll('.dia:not(.dia--vacio)');
-            botonesDias.forEach(btn => {
-                const info = btn.dataset.info || '';
-                if (info !== '') {
-                    if (!info.includes(termino)) {
-                        btn.classList.remove('dia--ocupado');
-                        btn.style.opacity = '0.2'; 
-                    } else {
-                        btn.classList.add('dia--ocupado');
-                        btn.style.opacity = '1'; 
+            listaCitas.forEach(cita => {
+                const fEntrada = cita.fecha_entrada || cita.fechaEntrada;
+                const fSalida = cita.fecha_salida || cita.fechaSalida;
+
+                if (fEntrada && fSalida) {
+                    const partesEntrada = fEntrada.split('T')[0].split('-');
+                    const partesSalida = fSalida.split('T')[0].split('-');
+
+                    const anioEntrada = parseInt(partesEntrada[0], 10);
+                    const mesEntrada = parseInt(partesEntrada[1], 10);
+                    const diaInicio = parseInt(partesEntrada[2], 10);
+                    const diaFin = parseInt(partesSalida[2], 10);
+
+                    if (anioEntrada === anioActual && mesEntrada === (indiceMes + 1)) {
+                        for (let d = diaInicio; d <= diaFin; d++) {
+                            diasOcupados.add(d);
+                            const mascota = cita.nombre_mascota || 'Mascota';
+                            const cliente = cita.nombre_cliente || 'Cliente';
+                            
+                            citasDelMesDetalle.push({
+                                id_cita: cita.id_cita || cita.id,
+                                dia: d,
+                                mascota: mascota,
+                                cliente: cliente,
+                                telefono: cita.telefono_cliente || 'Sin teléfono',
+                                fechaEntrada: fEntrada.split('T')[0],
+                                fechaSalida: fSalida.split('T')[0],
+                                estado: cita.estado || 'Confirmada',
+                                textoBuscar: `${mascota} ${cliente}`.toLowerCase()
+                            });
+                        }
                     }
                 }
             });
-        });
+        } catch (err) {
+            console.warn('Error al cargar reservaciones:', err.message);
+            diasOcupados = new Set();
+            citasDelMesDetalle = [];
+        }
     }
 
     function generarCalendario() {
@@ -244,7 +166,7 @@ function generarCalendario() {
                 if (registrosDelDia.length > 0) {
                     const infoData = registrosDelDia.map(r => r.textoBuscar).join(' | ');
                     btn.dataset.info = infoData;
-                    btn.title = registrosDelDia.map(r => `Mascota: ${r.mascota} (Dueño: ${r.cliente})`).join('\n');
+                    btn.title = registrosDelDia.map(r => `Mascota: ${r.mascota} (Cliente: ${r.cliente})`).join('\n');
 
                     if (termino !== '') {
                         if (!infoData.includes(termino)) {
@@ -278,6 +200,7 @@ function generarCalendario() {
                             <p><strong>Teléfono:</strong> ${primeraCita.telefono}</p>
                             <p><strong>Ingreso:</strong> ${primeraCita.fechaEntrada}</p>
                             <p><strong>Salida:</strong> ${primeraCita.fechaSalida}</p>
+                            <p><strong>Estado:</strong> <span class="badge">${primeraCita.estado}</span></p>
                         `;
                         modalDetalleCita.classList.add('mostrar');
                     }
@@ -287,7 +210,15 @@ function generarCalendario() {
         }
     }
 
-    // Eliminación de reservas desde la vista del Administrador
+    // Búsqueda interactiva
+    const inputBuscar = document.querySelector('input[placeholder="Buscar reservacion..."]');
+    if (inputBuscar) {
+        inputBuscar.addEventListener('input', () => {
+            generarCalendario();
+        });
+    }
+
+    // Eliminación de reservas Admin
     if (btnEliminarCita) {
         btnEliminarCita.addEventListener('click', async () => {
             if (!citaSeleccionadaId) return;
@@ -327,6 +258,7 @@ function generarCalendario() {
     function llenarSelectFechas(id) {
         const select = document.getElementById(id);
         if (!select) return;
+        const valorPrevio = select.value;
         select.innerHTML = '<option value="">Selecciona</option>';
         for (let dia = 1; dia <= obtenerDiasEnMes(); dia++) {
             const option = document.createElement('option');
@@ -334,56 +266,53 @@ function generarCalendario() {
             option.textContent = dia;
             select.appendChild(option);
         }
+        if (valorPrevio && valorPrevio <= obtenerDiasEnMes()) {
+            select.value = valorPrevio;
+        }
     }
 
-async function cargarServiciosDisponibles() {
-    if (!serviciosCheckboxes) return;
-    
-    try {
-        const respuesta = await apiFetch('/servicios', { method: 'GET' });
+    async function cargarServiciosDisponibles() {
+        if (!serviciosCheckboxes) return;
         
-        // Extraer la lista sin importar la envoltura del JSON
-        let servicios = [];
-        if (Array.isArray(respuesta)) {
-            servicios = respuesta;
-        } else if (Array.isArray(respuesta.servicios)) {
-            servicios = respuesta.servicios;
-        } else if (Array.isArray(respuesta.data)) {
-            servicios = respuesta.data;
+        try {
+            const respuesta = await apiFetch('/servicios', { method: 'GET' });
+            
+            let servicios = [];
+            if (Array.isArray(respuesta)) {
+                servicios = respuesta;
+            } else if (Array.isArray(respuesta.servicios)) {
+                servicios = respuesta.servicios;
+            } else if (Array.isArray(respuesta.data)) {
+                servicios = respuesta.data;
+            }
+
+            if (servicios.length === 0) {
+                serviciosCheckboxes.innerHTML = `
+                    <p style="color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 8px 12px; border-radius: 6px; font-size: 13px;">
+                        ⚠️ No hay servicios registrados en la base de datos.
+                    </p>`;
+                return;
+            }
+
+            serviciosCheckboxes.innerHTML = servicios.map(srv => {
+                const id = srv.id_servicio || srv.id || srv.idServicio;
+                const nombre = srv.nombre || srv.titulo || 'Servicio';
+                const precio = srv.precio_mediano || srv.precio_pequeno || srv.precio_grande || null;
+                const textoPrecio = precio ? ` ($${precio})` : '';
+
+                return `
+                    <label class="checkbox-servicio" style="display: inline-flex; align-items: center; gap: 8px; margin-right: 12px; margin-bottom: 10px; cursor: pointer; font-size: 14px; background: rgba(255,255,255,0.8); padding: 8px 14px; border-radius: 8px; border: 1px solid #e0e0e0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <input type="checkbox" name="servicio" value="${id}" style="cursor: pointer; width: 16px; height: 16px;">
+                        <span><strong>${nombre}</strong>${textoPrecio}</span>
+                    </label>
+                `;
+            }).join('');
+
+        } catch (err) {
+            console.warn('Error al cargar servicios:', err.message);
+            serviciosCheckboxes.innerHTML = `<p style="color: #888; font-size: 13px;">No se pudieron cargar los servicios disponibles.</p>`;
         }
-
-        // Si la base de datos no tiene servicios registrados
-        if (servicios.length === 0) {
-            serviciosCheckboxes.innerHTML = `
-                <p style="color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 8px 12px; border-radius: 6px; font-size: 13px;">
-                    ⚠️ No hay servicios registrados en la base de datos.
-                </p>`;
-            return;
-        }
-
-        // Renderizar los checkboxes
-        serviciosCheckboxes.innerHTML = servicios.map(srv => {
-            const id = srv.id_servicio || srv.id || srv.idServicio;
-            const nombre = srv.nombre || srv.titulo || 'Servicio';
-            const precio = srv.precio_mediano || srv.precio_pequeno || srv.precio_grande || null;
-            const textoPrecio = precio ? ` ($${precio})` : '';
-
-            return `
-                <label class="checkbox-servicio" style="display: inline-flex; align-items: center; gap: 8px; margin-right: 12px; margin-bottom: 10px; cursor: pointer; font-size: 14px; background: rgba(255,255,255,0.8); padding: 8px 14px; border-radius: 8px; border: 1px solid #e0e0e0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                    <input type="checkbox" name="servicio" value="${id}" style="cursor: pointer; width: 16px; height: 16px;">
-                    <span><strong>${nombre}</strong>${textoPrecio}</span>
-                </label>
-            `;
-        }).join('');
-
-    } catch (err) {
-        console.warn('Error al cargar servicios:', err.message);
-        serviciosCheckboxes.innerHTML = `
-            <p style="color: #888; font-size: 13px;">
-                No se pudieron cargar los servicios disponibles en este momento.
-            </p>`;
     }
-}
 
     async function actualizarCalendario() {
         if (mesNombre) mesNombre.textContent = meses[indiceMes];
@@ -463,7 +392,7 @@ async function cargarServiciosDisponibles() {
                 if (modalExito) modalExito.classList.add('mostrar');
                 await actualizarCalendario();
             } catch (err) {
-                mostrarError(err.message || 'No se pudo guardar la reservación. Intenta de nuevo.');
+                mostrarError(err.message || 'No se pudo guardar la reservación.');
             } finally {
                 if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = 'Guardar reservación'; }
             }

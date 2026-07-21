@@ -61,8 +61,14 @@ async function crearCita(req, res) {
     await conexion.beginTransaction();
 
     let idCliente = null;
-    if (!id_usuario) {
-      const [clientesExistentes] = await conexion.query('SELECT id_cliente FROM CLIENTE WHERE contacto = ?', [telefonoCliente]);
+
+    // Lógica para asignar o crear Cliente
+    if (telefonoCliente || nombreCliente) {
+      const [clientesExistentes] = await conexion.query(
+        'SELECT id_cliente FROM CLIENTE WHERE contacto = ? AND contacto != ""', 
+        [telefonoCliente || '']
+      );
+
       if (clientesExistentes.length > 0) {
         idCliente = clientesExistentes[0].id_cliente;
       } else if (nombreCliente) {
@@ -72,17 +78,16 @@ async function crearCita(req, res) {
         );
         idCliente = nuevoCliente.insertId;
       }
-    } else {
-      idCliente = id_usuario;
     }
 
+    // Lógica para asignar o crear Mascota
     let idMascota = null;
     if (nombreMascota) {
       const [mascotasExistentes] = await conexion.query(
         'SELECT id_mascota FROM MASCOTA WHERE nombre = ? AND (id_cliente = ? OR id_cliente IS NULL)',
         [nombreMascota, idCliente]
       );
-      
+
       if (mascotasExistentes.length > 0) {
         idMascota = mascotasExistentes[0].id_mascota;
       } else {
@@ -94,15 +99,17 @@ async function crearCita(req, res) {
       }
     }
 
+    // Insertar en la tabla CITA (Asegurando 'Confirmada' o 'pendiente')
     const [nuevaCita] = await conexion.query(
       `INSERT INTO CITA (fecha_entrada, fecha_salida, estado, id_mascota, id_cliente, id_usuario)
-       VALUES (?, ?, 'pendiente', ?, ?, ?)`,
+       VALUES (?, ?, 'Confirmada', ?, ?, ?)`,
       [fechaEntrada, fechaSalida, idMascota, idCliente, id_usuario || null]
     );
     const idCita = nuevaCita.insertId;
 
+    // Insertar Relación Cita-Servicios (CORREGIDO: doble corchete [[valores]])
     if (Array.isArray(servicios) && servicios.length > 0) {
-      const valores = servicios.map((idServicio) => [idCita, idServicio]);
+      const valores = servicios.map((idServicio) => [idCita, Number(idServicio)]);
       await conexion.query('INSERT INTO CITA_SERVICIO (id_cita, id_servicio) VALUES ?', [valores]);
     }
 
@@ -111,7 +118,7 @@ async function crearCita(req, res) {
   } catch (error) {
     await conexion.rollback();
     console.error('Error al crear cita:', error);
-    return res.status(500).json({ ok: false, mensaje: 'Error del servidor.' });
+    return res.status(500).json({ ok: false, mensaje: 'Error del servidor al crear cita: ' + error.message });
   } finally {
     conexion.release();
   }
