@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let citaSeleccionadaId = null;
 
     // -------------------------------------------------------------------
-    // 2. CAMBIO DE VISTAS (Navegación)
+    // 2. CAMBIO DE VISTAS
     // -------------------------------------------------------------------
     function mostrarFormulario() {
         if (vistaCalendario) vistaCalendario.classList.remove('activa');
@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnCancelar) btnCancelar.addEventListener('click', mostrarCalendario);
 
     // -------------------------------------------------------------------
-    // 3. POBLAR SELECTS DE FECHAS
+    // 3. POBLAR SELECTS DE DÍAS
     // -------------------------------------------------------------------
     function poblarSelectDias(numDias) {
         if (!selectIngreso || !selectSalida) return;
@@ -93,21 +93,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Carga inicial de días
         const indexInicial = meses.indexOf(selectMes.value);
         const diasIniciales = new Date(anioActual, indexInicial !== -1 ? indexInicial + 1 : mesActualIndex + 1, 0).getDate();
         poblarSelectDias(diasIniciales);
     }
 
     // -------------------------------------------------------------------
-    // 4. RENDERING DEL CALENDARIO Y CITA
+    // 4. RENDERING DEL CALENDARIO
     // -------------------------------------------------------------------
     async function cargarCitas() {
         try {
-            const res = await fetch(`${URL_BASE}/citas`);
+            const res = await fetch(`${URL_BASE}/citas?mes=${mesActualIndex + 1}&anio=${anioActual}`);
             if (res.ok) {
                 const data = await res.json();
-                citasGuardadas = Array.isArray(data) ? data : (data.citas || data.data || []);
+                citasGuardadas = data.citas || [];
             }
         } catch (err) {
             console.warn('Error al obtener reservaciones:', err);
@@ -148,16 +147,16 @@ document.addEventListener('DOMContentLoaded', () => {
             fechaEvaluar.setHours(0, 0, 0, 0);
 
             const citasDelDia = citasGuardadas.filter(c => {
-                const fIngresoStr = c.fecha_ingreso || c.fecha_inicio;
-                const fSalidaStr = c.fecha_salida || c.fecha_fin;
-                if (!fIngresoStr || !fSalidaStr) return false;
+                const fEntradaStr = c.fecha_entrada;
+                const fSalidaStr = c.fecha_salida;
+                if (!fEntradaStr || !fSalidaStr) return false;
 
-                const fIngreso = new Date(fIngresoStr + (fIngresoStr.includes('T') ? '' : 'T00:00:00'));
+                const fEntrada = new Date(fEntradaStr + (fEntradaStr.includes('T') ? '' : 'T00:00:00'));
                 const fSalida = new Date(fSalidaStr + (fSalidaStr.includes('T') ? '' : 'T00:00:00'));
-                fIngreso.setHours(0, 0, 0, 0);
+                fEntrada.setHours(0, 0, 0, 0);
                 fSalida.setHours(0, 0, 0, 0);
 
-                return fechaEvaluar >= fIngreso && fechaEvaluar <= fSalida;
+                return fechaEvaluar >= fEntrada && fechaEvaluar <= fSalida;
             });
 
             if (citasDelDia.length > 0) {
@@ -165,8 +164,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 citasDelDia.forEach(cita => {
                     const tagCita = document.createElement('div');
                     tagCita.className = 'evento-cita';
-                    tagCita.textContent = cita.nombre_mascota || cita.mascota || 'Mascota';
-                    tagCita.title = `Cliente: ${cita.nombre_cliente || cita.cliente || 'N/A'}`;
+                    tagCita.textContent = cita.nombre_mascota || 'Mascota';
+                    tagCita.title = `Cliente: ${cita.nombre_cliente || 'N/A'}`;
                     
                     tagCita.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -187,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 mesActualIndex = 11;
                 anioActual--;
             }
-            renderizarCalendario();
+            cargarCitas();
         });
     }
 
@@ -198,25 +197,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 mesActualIndex = 0;
                 anioActual++;
             }
-            renderizarCalendario();
+            cargarCitas();
         });
     }
 
     // -------------------------------------------------------------------
-    // 5. MODAL DETALLES Y ELIMINACIÓN
+    // 5. MODAL DETALLES Y ELIMINAR RESERVACIÓN
     // -------------------------------------------------------------------
     function abrirDetalleCita(cita) {
-        citaSeleccionadaId = cita.id_cita || cita.id;
+        citaSeleccionadaId = cita.id_cita;
         if (!contenidoDetalleCita || !modalDetalleCita) return;
 
         contenidoDetalleCita.innerHTML = `
-            <p><strong>Mascota:</strong> ${cita.nombre_mascota || cita.mascota || 'N/A'}</p>
-            <p><strong>Raza:</strong> ${cita.raza || 'N/A'}</p>
-            <p><strong>Edad:</strong> ${cita.edad || 'N/A'}</p>
-            <p><strong>Cliente:</strong> ${cita.nombre_cliente || cita.cliente || 'N/A'}</p>
-            <p><strong>Teléfono:</strong> ${cita.telefono || cita.telefono_cliente || 'N/A'}</p>
-            <p><strong>Ingreso:</strong> ${cita.fecha_ingreso || cita.fecha_inicio || 'N/A'}</p>
-            <p><strong>Salida:</strong> ${cita.fecha_salida || cita.fecha_fin || 'N/A'}</p>
+            <p><strong>Mascota:</strong> ${cita.nombre_mascota || 'N/A'}</p>
+            <p><strong>Cliente:</strong> ${cita.nombre_cliente || 'N/A'}</p>
+            <p><strong>Teléfono:</strong> ${cita.telefono_cliente || 'N/A'}</p>
+            <p><strong>Fecha Entrada:</strong> ${cita.fecha_entrada || 'N/A'}</p>
+            <p><strong>Fecha Salida:</strong> ${cita.fecha_salida || 'N/A'}</p>
+            <p><strong>Estado:</strong> ${cita.estado || 'Confirmada'}</p>
         `;
 
         modalDetalleCita.classList.add('activo');
@@ -252,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------------------------------------------------------------------
-    // 6. CREAR / GUARDAR RESERVACIÓN
+    // 6. GUARDAR RESERVACIÓN (COINCIDIENDO CON EL CONTROLLER)
     // -------------------------------------------------------------------
     if (formReserva) {
         formReserva.addEventListener('submit', async (e) => {
@@ -277,30 +275,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const ddIngreso = String(diaIngresoVal).padStart(2, '0');
             const ddSalida = String(diaSalidaVal).padStart(2, '0');
 
-            const fechaIngresoStr = `${anioActual}-${mm}-${ddIngreso}`;
+            const fechaEntradaStr = `${anioActual}-${mm}-${ddIngreso}`;
             const fechaSalidaStr = `${anioActual}-${mm}-${ddSalida}`;
 
-            const nombreCliente = document.getElementById('nombreCliente')?.value.trim() || "";
-            const telefonoCliente = document.getElementById('telefonoCliente')?.value.trim() || "";
-            const nombreMascota = document.getElementById('nombreMascota')?.value.trim() || "";
-            const edadMascota = document.getElementById('edadMascota')?.value.trim() || "";
-            const razaMascota = document.getElementById('razaMascota')?.value.trim() || "";
-
-            // Payload completo que cubre todas las variaciones posibles esperadas por el Backend
+            // ESTRUCTURA EXACTA QUE PIDE citasController.js
             const payload = {
-                nombre_cliente: nombreCliente,
-                cliente: nombreCliente,
-                telefono: telefonoCliente,
-                telefono_cliente: telefonoCliente,
-                nombre_mascota: nombreMascota,
-                mascota: nombreMascota,
-                edad: edadMascota,
-                raza: razaMascota,
-                fecha_ingreso: fechaIngresoStr,
-                fecha_inicio: fechaIngresoStr,
-                fecha_salida: fechaSalidaStr,
-                fecha_fin: fechaSalidaStr,
-                servicios: []
+                fechaEntrada: fechaEntradaStr,
+                fechaSalida: fechaSalidaStr,
+                nombreCliente: document.getElementById('nombreCliente')?.value.trim() || "",
+                telefonoCliente: document.getElementById('telefonoCliente')?.value.trim() || "",
+                nombreMascota: document.getElementById('nombreMascota')?.value.trim() || "",
+                edadMascota: document.getElementById('edadMascota')?.value.trim() || "",
+                razaMascota: document.getElementById('razaMascota')?.value.trim() || "",
+                servicios: [] // Sin servicios asignados por defecto
             };
 
             try {
@@ -313,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json().catch(() => ({}));
 
                 if (!res.ok) {
-                    throw new Error(data.mensaje || data.error || 'Faltan datos obligatorios');
+                    throw new Error(data.mensaje || 'Error del servidor al crear cita');
                 }
 
                 if (modalExito) modalExito.classList.add('activo');
@@ -338,5 +325,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Carga inicial
     cargarCitas();
 });
