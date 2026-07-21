@@ -21,11 +21,11 @@
       </button>
 
       <nav class="sidebar-nav">
-                <a href="index.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-house"></i></span><span class="sidebar-label">Inicio</span></a>
-                <a href="servicios.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-star"></i></span><span class="sidebar-label">Servicios</span></a>
-                <a href="mascotas.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-paw"></i></span><span class="sidebar-label">Mascotas</span></a>
-                <a href="reservaciones.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-calendar-days"></i></span><span class="sidebar-label">Reservas</span></a>
-                <a href="ganancias.html" class="sidebar-link active"><span class="sidebar-icon"><i class="fa-solid fa-credit-card"></i></span><span class="sidebar-label">Ganancias</span></a>
+        <a href="index.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-house"></i></span><span class="sidebar-label">Inicio</span></a>
+        <a href="servicios.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-star"></i></span><span class="sidebar-label">Servicios</span></a>
+        <a href="mascotas.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-paw"></i></span><span class="sidebar-label">Mascotas</span></a>
+        <a href="reservaciones.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-calendar-days"></i></span><span class="sidebar-label">Reservas</span></a>
+        <a href="ganancias.html" class="sidebar-link active"><span class="sidebar-icon"><i class="fa-solid fa-credit-card"></i></span><span class="sidebar-label">Ganancias</span></a>
       </nav>
       <a href="perfil.html" class="sidebar-admin">
         <span class="sidebar-icon"><img class="icono" src="img/usergenerall.png" alt=""></span>
@@ -37,106 +37,98 @@
       <div class="glass-panel">
         <div class="tabs">
           <button type="button" class="tab-btn active" id="tabGraficasBtn">Gráficas</button>
-        <button type="button" class="tab-btn" id="tabEditarBtn">Editar datos</button>
-      </div>
-
-      <div class="tab-view" id="vistaGraficas">
-      <section class="card">
-        <h2 class="card-title">Espacio en la guardería</h2>
-        <div class="card-body card-body-split">
-          <div class="chart-wrap chart-wrap-pie">
-            <canvas id="espacioChart"></canvas>
-          </div>
-          <ul class="legend" id="espacioLeyenda"></ul>
+          <button type="button" class="tab-btn" id="tabEditarBtn">Editar datos</button>
         </div>
-      </section>
 
-      <section class="card">
-        <h2 class="card-title">Ganancias mensuales</h2>
-        <div class="card-body">
-          <div class="chart-wrap chart-wrap-bar">
-            <canvas id="gananciasChart"></canvas>
-          </div>
+        <!-- ===== VISTA 1: GRÁFICAS ===== -->
+        <div class="tab-view" id="vistaGraficas">
+          <section class="card">
+            <h2 class="card-title">Espacio en la guardería</h2>
+            <div class="card-body card-body-split">
+              <div class="chart-wrap chart-wrap-pie">
+                <canvas id="espacioChart"></canvas>
+              </div>
+              <ul class="legend" id="espacioLeyenda"></ul>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2 class="card-title">Ganancias mensuales</h2>
+            <div class="card-body">
+              <div class="chart-wrap chart-wrap-bar">
+                <canvas id="gananciasChart"></canvas>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2 class="card-title">Ingresos por servicio</h2>
+            <div class="card-body card-body-split">
+              <div class="chart-wrap chart-wrap-pie">
+                <canvas id="serviciosChart"></canvas>
+              </div>
+              <ul class="legend" id="serviciosLeyenda"></ul>
+            </div>
+          </section>
         </div>
-      </section>
 
-      <section class="card">
-        <h2 class="card-title">Ingresos por servicio</h2>
-        <div class="card-body card-body-split">
-          <div class="chart-wrap chart-wrap-pie">
-            <canvas id="serviciosChart"></canvas>
-          </div>
-          <ul class="legend" id="serviciosLeyenda"></ul>
-        </div>
-      </section>
+        <!-- ===== VISTA 2: EDITAR DATOS ===== -->
+        <div class="tab-view" id="vistaEditar" hidden>
+          <section class="card">
+            <h2 class="card-title">Espacio en la guardería</h2>
 
-      <button type="button" class="add-btn" id="agregarBtn">+ Agregar información</button>
-      </div>
-
-      <!-- ===== VISTA 2: EDITAR DATOS =====
-           Nota: esta parte es una MAQUETA para mostrar cómo se vería el
-           flujo de captura de datos. Los botones +/- y los bloques
-           funcionan visualmente (para que se entienda la idea), pero no
-           están conectados a una base de datos real todavía, soloes el diseno. -->
-      <div class="tab-view" id="vistaEditar" hidden>
-        <section class="card">
-          <h2 class="card-title">Espacio en la guardería</h2>
-
-          <div class="capacity-row">
-            <div class="capacity-box">
-              <span class="capacity-label">Total</span>
-              <div class="capacity-value" id="capacityTotal">50</div>
-            </div>
-            <div class="capacity-box">
-              <span class="capacity-label">Ocupado</span>
-              <div class="capacity-value" id="capacityOcupado">20</div>
-            </div>
-            <div class="capacity-box">
-              <span class="capacity-label">Libre</span>
-              <div class="capacity-value" id="capacityLibre">30</div>
-            </div>
-          </div>
-
-          <div class="card-body">
-            <div class="stepper-row">
-              <div class="stepper-info">
-                <span class="stepper-bar">Lugares reservados</span>
-                <span class="stepper-value" id="valorReservados">12</span>
+            <div class="capacity-row">
+              <div class="capacity-box">
+                <span class="capacity-label">Total</span>
+                <div class="capacity-value" id="capacityTotal">50</div>
               </div>
-              <div class="stepper-controls">
-                <button type="button" class="stepper-btn" data-target="reservados" data-op="-">−</button>
-                <button type="button" class="stepper-btn" data-target="reservados" data-op="+">+</button>
+              <div class="capacity-box">
+                <span class="capacity-label">Ocupado</span>
+                <div class="capacity-value" id="capacityOcupado">20</div>
+              </div>
+              <div class="capacity-box">
+                <span class="capacity-label">Libre</span>
+                <div class="capacity-value" id="capacityLibre">30</div>
               </div>
             </div>
-            <div class="stepper-row">
-              <div class="stepper-info">
-                <span class="stepper-bar">Lugares ocupados</span>
-                <span class="stepper-value" id="valorOcupados">20</span>
+
+            <div class="card-body">
+              <div class="stepper-row">
+                <div class="stepper-info">
+                  <span class="stepper-bar">Lugares reservados</span>
+                  <span class="stepper-value" id="valorReservados">12</span>
+                </div>
+                <div class="stepper-controls">
+                  <button type="button" class="stepper-btn" data-target="reservados" data-op="-">−</button>
+                  <button type="button" class="stepper-btn" data-target="reservados" data-op="+">+</button>
+                </div>
               </div>
-              <div class="stepper-controls">
-                <button type="button" class="stepper-btn" data-target="ocupados" data-op="-">−</button>
-                <button type="button" class="stepper-btn" data-target="ocupados" data-op="+">+</button>
+              <div class="stepper-row">
+                <div class="stepper-info">
+                  <span class="stepper-bar">Lugares ocupados</span>
+                  <span class="stepper-value" id="valorOcupados">20</span>
+                </div>
+                <div class="stepper-controls">
+                  <button type="button" class="stepper-btn" data-target="ocupados" data-op="-">−</button>
+                  <button type="button" class="stepper-btn" data-target="ocupados" data-op="+">+</button>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section class="card">
-          <h2 class="card-title">Ganancias mensuales</h2>
+          <section class="card">
+            <h2 class="card-title">Ganancias mensuales</h2>
+            <p class="income-table-description">Registra el ingreso de cada servicio por mes. Los totales se calculan automáticamente.</p>
 
-          <div class="income-table-wrap">
-            <div class="block-grid-header">
-              <span>Enero</span><span>Febrero</span><span>Marzo</span><span>Abril</span>
-              <span>Mayo</span><span>Junio</span><span>Julio</span>
-            </div>
-            <p class="income-table-description">Registra el ingreso de cada servicio. Los totales se calculan automáticamente.</p>
-            <div class="income-table-scroll">
-              <table class="income-table">
+            <div class="income-table-scroll" style="overflow-x: auto; max-width: 100%;">
+              <table class="income-table" style="width: 100%; border-collapse: collapse;">
                 <thead>
                   <tr>
                     <th scope="col">Servicio</th>
-                    <th scope="col">Enero</th><th scope="col">Febrero</th><th scope="col">Marzo</th>
-                    <th scope="col">Abril</th><th scope="col">Mayo</th><th scope="col">Junio</th><th scope="col">Julio</th>
+                    <th scope="col">Ene</th><th scope="col">Feb</th><th scope="col">Mar</th>
+                    <th scope="col">Abr</th><th scope="col">May</th><th scope="col">Jun</th>
+                    <th scope="col">Jul</th><th scope="col">Ago</th><th scope="col">Sep</th>
+                    <th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dic</th>
                     <th scope="col">Total</th>
                   </tr>
                 </thead>
@@ -144,26 +136,25 @@
                 <tfoot id="incomeTableFoot"></tfoot>
               </table>
             </div>
-            <p class="block-grid-hint">Haz clic en un bloque para llenarlo o vaciarlo — así es como se iría capturando cada mes.</p>
-          </div>
+          </section>
 
-        </section>
-
-        <button type="button" class="save-btn" id="guardarBtn">Guardar</button>
-      </div>
+          <button type="button" class="save-btn" id="guardarBtn" style="margin-top: 20px;">Guardar cambios</button>
+        </div>
       </div>
     </main>
   </div>
 
+  <!-- Modal de confirmación -->
   <div class="modal-overlay" id="confirmModal">
     <div class="modal-box">
-      <p>¿Estás seguro de que quieres modificar los datos?</p>
+      <p>¿Estás seguro de que deseas guardar y modificar los datos?</p>
       <div class="modal-actions">
         <button type="button" class="btn-confirm" id="confirmarBtn">Confirmar</button>
         <button type="button" class="btn-cancel" id="cancelarBtn">Cancelar</button>
       </div>
     </div>
   </div>
+
   <script src="js/config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="js/sidebar-common.js"></script>
