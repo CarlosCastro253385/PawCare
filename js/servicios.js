@@ -111,8 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // -------------------------------------------------------------------
-    // 3. GUARDAR SERVICIO DESDE EL FORMULARIO
+// -------------------------------------------------------------------
+    // GUARDAR SERVICIO (Estructura original de tu proyecto)
     // -------------------------------------------------------------------
     const formServicio = document.getElementById('formServicio');
     if (formServicio) {
@@ -125,37 +125,42 @@ document.addEventListener('DOMContentLoaded', () => {
             const precioRaw = document.getElementById('precioServicio')?.value.trim() || "";
             const inputImagen = document.getElementById('imagenServicio');
 
-            const numeros = precioRaw.match(/\d+(\.\d+)?/g) || [250];
-            const pGrande = parseFloat(numeros[0] || 250);
-            const pMediano = parseFloat(numeros[1] || numeros[0] || 200);
-            const pChico = parseFloat(numeros[2] || numeros[0] || 150);
+            // Extraemos los números ingresados en el campo de precios
+            const numeros = precioRaw.match(/\d+(\.\d+)?/g) || [0];
+            const pGrande = parseFloat(numeros[0] || 0);
+            const pMediano = parseFloat(numeros[1] || numeros[0] || 0);
+            const pChico = parseFloat(numeros[2] || numeros[0] || 0);
 
             const formData = new FormData();
             formData.append('nombre', nombre);
             formData.append('descripcion', descripcion);
             formData.append('titulo_corto', detalles);
+            
+            // Enviamos los campos de precio con las variantes comunes del backend
             formData.append('precio_grande', pGrande);
             formData.append('precio_mediano', pMediano);
             formData.append('precio_chico', pChico);
+            formData.append('precio', pGrande); // Por compatibilidad si la API exige 'precio'
 
             if (inputImagen && inputImagen.files[0]) {
                 formData.append('imagen', inputImagen.files[0]);
             }
 
             try {
-                await apiFetch('/servicios', {
+                const respuesta = await apiFetch('/servicios', {
                     method: 'POST',
                     body: formData
                 });
 
                 alert('¡Servicio guardado con éxito!');
-                location.reload();
+                modalServicio.style.display = 'none';
+                formServicio.reset();
+                fetchServices(); // Recarga la lista dinámicamente sin recargar toda la página
             } catch (err) {
                 console.error('Error detallado:', err);
                 alert(`Error al guardar: ${err.message}`);
             }
         });
     }
-
     fetchServices();
 });
