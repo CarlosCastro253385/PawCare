@@ -47,38 +47,46 @@
         </main>
     </div>
 
-    <!-- MODAL PARA AGREGAR / EDITAR SERVICIO -->
-    <div id="modalServicio" class="modal-overlay" style="display: none;">
-        <div class="modal-box">
-            <h2>Nuevo Servicio</h2>
-            <form id="formServicio">
-                <div class="form-grupo" style="margin-bottom: 15px;">
-                    <label>Nombre del servicio:</label>
-                    <input type="text" id="nombreServicio" placeholder="Ej. Baño y Corte" required style="width: 100%; padding: 8px;">
+<!-- MODAL PARA AGREGAR / EDITAR SERVICIO -->
+<div id="modalServicio" class="modal-overlay" style="display: none;">
+    <div class="modal-box" style="width: 550px; text-align: left;">
+        <h3 style="margin-bottom: 20px; color: var(--text-dark);">Nuevo Servicio</h3>
+        
+        <form id="formServicio">
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="custom-input">
+                    <textarea id="nombreServicio" placeholder="Nombre del servicio" rows="1" required></textarea>
+                    <i class="fa-solid fa-pen"></i>
                 </div>
-                <div class="form-grupo" style="margin-bottom: 15px;">
-                    <label>Descripción:</label>
-                    <textarea id="descServicio" placeholder="Descripción breve" style="width: 100%; padding: 8px;"></textarea>
+
+                <div class="custom-input">
+                    <textarea id="descServicio" placeholder="Descripción breve" rows="2"></textarea>
+                    <i class="fa-solid fa-align-left"></i>
                 </div>
-                <div class="form-grupo" style="margin-bottom: 15px;">
-                    <label>Detalles (uno por línea):</label>
-                    <textarea id="detallesServicio" placeholder="Baño con shampoo&#10;Corte de pelo&#10;Limpieza de oídos" style="width: 100%; padding: 8px;"></textarea>
+
+                <div class="custom-input">
+                    <textarea id="detallesServicio" placeholder="Detalles (uno por línea)" rows="3"></textarea>
+                    <i class="fa-solid fa-list"></i>
                 </div>
-                <div class="form-grupo" style="margin-bottom: 15px;">
-                    <label>Precios (Grande / Mediano / Chico):</label>
-                    <input type="text" id="precioServicio" placeholder="Ej. 300 / 250 / 200" required style="width: 100%; padding: 8px;">
+
+                <div class="custom-input">
+                    <textarea id="precioServicio" placeholder="Precios (Ej. 300 / 250 / 200)" rows="1" required></textarea>
+                    <i class="fa-solid fa-dollar-sign"></i>
                 </div>
-                <div class="form-grupo" style="margin-bottom: 20px;">
-                    <label>Imagen del servicio:</label>
-                    <input type="file" id="imagenServicio" accept="image/*" style="width: 100%;">
+
+                <div style="margin-top: 5px;">
+                    <label style="font-size: 13px; color: #475569; font-weight: 600; display: block; margin-bottom: 5px;">Imagen del servicio:</label>
+                    <input type="file" id="imagenServicio" accept="image/*" style="width: 100%; font-size: 14px;">
                 </div>
-                <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button type="button" id="btnCerrarModal" class="btn-secundario">Cancelar</button>
-                    <button type="submit" class="btn-primario">Guardar Servicio</button>
-                </div>
-            </form>
-        </div>
+            </div>
+
+            <div class="form-actions" style="margin-top: 25px;">
+                <button type="button" id="btnCerrarModal" class="btn-danger" style="padding: 10px 25px;">Cancelar</button>
+                <button type="submit" class="btn-success" style="padding: 10px 25px;">Guardar</button>
+            </div>
+        </form>
     </div>
+</div>
 
     <!-- SCRIPTS -->
     <script src="js/config.js"></script>
