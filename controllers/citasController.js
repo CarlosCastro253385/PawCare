@@ -1,31 +1,40 @@
 const pool = require('../config/db');
 
 // GET /api/citas?mes=7&anio=2026&id_usuario=X
-// Sirve para pintar el calendario de reservaciones.js con los días ya ocupados.
 async function obtenerCitas(req, res) {
-  // CORREGIDO: Ahora extraemos id_usuario en lugar de id_cliente para coincidir con el Frontend
   const { mes, anio, id_usuario } = req.query;
 
   try {
+    // Se usa LEFT JOIN para no perder citas si el cliente/usuario no existe en la tabla CLIENTE
     let consulta = `
-      SELECT ci.id_cita, ci.fecha_entrada, ci.fecha_salida, ci.estado, ci.observaciones,
-             m.nombre AS nombre_mascota, cl.nombre AS nombre_cliente, cl.contacto AS telefono_cliente
+      SELECT 
+        ci.id_cita, 
+        ci.fecha_entrada, 
+        ci.fecha_salida, 
+        ci.estado, 
+        ci.observaciones,
+        COALESCE(m.nombre, 'Mascota') AS nombre_mascota, 
+        COALESCE(cl.nombre, u.nombre, 'Cliente') AS nombre_cliente, 
+        COALESCE(cl.contacto, u.telefono, 'Sin contacto') AS telefono_cliente
       FROM CITA ci
-      JOIN MASCOTA m ON ci.id_mascota = m.id_mascota
-      JOIN CLIENTE cl ON ci.id_cliente = cl.id_cliente
+      LEFT JOIN MASCOTA m ON ci.id_mascota = m.id_mascota
+      LEFT JOIN CLIENTE cl ON ci.id_cliente = cl.id_cliente
+      LEFT JOIN USUARIO u ON ci.id_usuario = u.id_usuario
       WHERE 1 = 1
     `;
     const parametros = [];
 
+    // Filtro por mes y año asegurando formato exacto (ej. 2026-07)
     if (mes && anio) {
-      consulta += ' AND MONTH(ci.fecha_entrada) = ? AND YEAR(ci.fecha_entrada) = ?';
-      parametros.push(mes, anio);
+      const mesFormateado = String(mes).padStart(2, '0');
+      consulta += " AND (DATE_FORMAT(ci.fecha_entrada, '%Y-%m') = ? OR DATE_FORMAT(ci.fecha_salida, '%Y-%m') = ?)";
+      parametros.push(`${anio}-${mesFormateado}`, `${anio}-${mesFormateado}`);
     }
 
-    // CORREGIDO: Filtra las citas basándose en el id_usuario que mandó el Frontend del cliente
+    // Filtra si se especifica un usuario
     if (id_usuario) {
-      consulta += ' AND ci.id_cliente = ?';
-      parametros.push(id_usuario);
+      consulta += ' AND (ci.id_usuario = ? OR ci.id_cliente = ?)';
+      parametros.push(id_usuario, id_usuario);
     }
 
     const [citas] = await pool.query(consulta, parametros);
@@ -43,7 +52,7 @@ async function crearCita(req, res) {
     nombreMascota, edadMascota, razaMascota, id_usuario, servicios,
   } = req.body;
 
-  if (!fechaEntrada || !fechaSalida || !nombreCliente || !nombreMascota) {
+  if (!fechaEntrada || !fechaSalida || !nombreMascota) {
     return res.status(400).json({ ok: false, mensaje: 'Faltan datos obligatorios de la reservación.' });
   }
 
@@ -51,43 +60,41 @@ async function crearCita(req, res) {
   try {
     await conexion.beginTransaction();
 
-    // 1. Obtener o crear el ID del cliente
-    let idCliente;
+    let idCliente = null;
     
-    // Si la cita la hace el cliente logueado, usamos directamente su id de usuario
-    if (id_usuario) {
-      idCliente = id_usuario;
-    } else {
-      // Si la hace un administrador/empleado en mostrador, se busca por teléfono
+    if (!id_usuario) {
       const [clientesExistentes] = await conexion.query('SELECT id_cliente FROM CLIENTE WHERE contacto = ?', [telefonoCliente]);
       if (clientesExistentes.length > 0) {
         idCliente = clientesExistentes[0].id_cliente;
-      } else {
+      } else if (nombreCliente) {
         const [nuevoCliente] = await conexion.query(
           'INSERT INTO CLIENTE (nombre, contacto) VALUES (?, ?)',
-          [nombreCliente, telefonoCliente]
+          [nombreCliente, telefonoCliente || '']
         );
         idCliente = nuevoCliente.insertId;
       }
-    }
-
-    // 2. Buscar o crear la mascota (por nombre + dueño)
-    let idMascota;
-    const [mascotasExistentes] = await conexion.query(
-      'SELECT id_mascota FROM MASCOTA WHERE nombre = ? AND id_cliente = ?',
-      [nombreMascota, idCliente]
-    );
-    if (mascotasExistentes.length > 0) {
-      idMascota = mascotasExistentes[0].id_mascota;
     } else {
-      const [nuevaMascota] = await conexion.query(
-        'INSERT INTO MASCOTA (nombre, edad, raza, id_cliente) VALUES (?, ?, ?, ?)',
-        [nombreMascota, edadMascota || null, razaMascota || null, idCliente]
-      );
-      idMascota = nuevaMascota.insertId;
+      idCliente = id_usuario;
     }
 
-    // 3. Crear la cita
+    let idMascota = null;
+    if (nombreMascota) {
+      const [mascotasExistentes] = await conexion.query(
+        'SELECT id_mascota FROM MASCOTA WHERE nombre = ? AND (id_cliente = ? OR id_cliente IS NULL)',
+        [nombreMascota, idCliente]
+      );
+      
+      if (mascotasExistentes.length > 0) {
+        idMascota = mascotasExistentes[0].id_mascota;
+      } else {
+        const [nuevaMascota] = await conexion.query(
+          'INSERT INTO MASCOTA (nombre, edad, raza, id_cliente) VALUES (?, ?, ?, ?)',
+          [nombreMascota, edadMascota || null, razaMascota || null, idCliente]
+        );
+        idMascota = nuevaMascota.insertId;
+      }
+    }
+
     const [nuevaCita] = await conexion.query(
       `INSERT INTO CITA (fecha_entrada, fecha_salida, estado, id_mascota, id_cliente, id_usuario)
        VALUES (?, ?, 'pendiente', ?, ?, ?)`,
@@ -95,7 +102,6 @@ async function crearCita(req, res) {
     );
     const idCita = nuevaCita.insertId;
 
-    // 4. Ligar los servicios elegidos (tabla CITA_SERVICIO)
     if (Array.isArray(servicios) && servicios.length > 0) {
       const valores = servicios.map((idServicio) => [idCita, idServicio]);
       await conexion.query('INSERT INTO CITA_SERVICIO (id_cita, id_servicio) VALUES ?', [valores]);
@@ -131,10 +137,7 @@ async function eliminarCita(req, res) {
   const { id } = req.params;
 
   try {
-    // 1. Primero eliminamos los servicios relacionados en la tabla intermedia
     await pool.query('DELETE FROM CITA_SERVICIO WHERE id_cita = ?', [id]);
-
-    // 2. Ahora eliminamos físicamente la cita de la tabla principal
     const [resultado] = await pool.query('DELETE FROM CITA WHERE id_cita = ?', [id]);
 
     if (resultado.affectedRows === 0) {
