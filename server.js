@@ -12,8 +12,12 @@ const perfilRoutes = require('./routes/perfilRoutes');
 const path = require('path');
 const app = express();
 
-app.use(cors()); // permite que tu frontend le hable a esta API
-
+// Permite que Vercel (HTTPS) haga peticiones a tu AWS (HTTP) sin ser bloqueado
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 // 1. AUMENTAR EL LÍMITE DE TAMAÑO PARA IMÁGENES BASE64 (20MB)
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ limit: '20mb', extended: true }));
