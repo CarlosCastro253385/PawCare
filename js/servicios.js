@@ -1,90 +1,81 @@
 document.addEventListener('DOMContentLoaded', () => {
     const URL_BASE = window.URL_BASE || '/api';
 
-    async function apiFetch(endpoint, opciones = {}) {
-        const urlCompleta = `${URL_BASE}${endpoint}`;
-        if (!(opciones.body instanceof FormData)) {
-            opciones.headers = {
-                'Content-Type': 'application/json',
-                ...opciones.headers
-            };
-        }
-        const respuesta = await fetch(urlCompleta, opciones);
-        if (!respuesta.ok) {
-            const errorData = await respuesta.json().catch(() => ({}));
-            const mensaje = errorData.message || errorData.error || `Error en el servidor: ${respuesta.status}`;
-            throw new Error(mensaje);
-        }
-        return await respuesta.json();
-    }
-
-    // -------------------------------------------------------------------
-    // 1. GESTIÓN DEL MODAL (Abrir / Cerrar)
-    // -------------------------------------------------------------------
     const modalServicio = document.getElementById('modalServicio');
-    const btnAgregarServicio = document.getElementById('btnAgregarServicio');
+    const btnAgregarServicio = document.getElementById('btnAgregarServicio') || document.getElementById('btn-agregar-servicio');
     const btnCerrarModal = document.getElementById('btnCerrarModal');
+    const formServicio = document.getElementById('formServicio');
+    const modalTitulo = modalServicio ? modalServicio.querySelector('h3') : null;
+    const servicesContainer = document.getElementById('services-container');
 
+    let servicioEditandoId = null;
+    let servicesData = [];
+
+    // Abrir Modal Crear
     if (btnAgregarServicio && modalServicio) {
         btnAgregarServicio.addEventListener('click', () => {
+            servicioEditandoId = null;
+            if (modalTitulo) modalTitulo.textContent = 'Nuevo Servicio';
+            if (formServicio) formServicio.reset();
             modalServicio.style.display = 'flex';
         });
     }
 
+    // Cerrar Modal
     if (btnCerrarModal && modalServicio) {
         btnCerrarModal.addEventListener('click', () => {
             modalServicio.style.display = 'none';
         });
     }
 
-    // -------------------------------------------------------------------
-    // 2. RENDERIZAR CATÁLOGO
-    // -------------------------------------------------------------------
-    const servicesContainer = document.getElementById('services-container');
-    let servicesData = [];
-
+    // OBTENER SERVICIOS
     async function fetchServices() {
         if (!servicesContainer) return;
         try {
-            const respuesta = await apiFetch('/servicios', { method: 'GET' });
-            servicesData = respuesta.servicios || respuesta.data || respuesta;
+            const respuesta = await fetch(${URL_BASE}/servicios);
+            if (!respuesta.ok) throw new Error(Error ${respuesta.status});
+            
+            const data = await respuesta.json();
+            servicesData = data.servicios || data.data || data;
         } catch (err) {
-            console.warn('No se pudo conectar con la API de servicios:', err.message);
+            console.warn('No se obtuvieron servicios:', err.message);
             servicesData = [];
         }
         renderUserCatalog();
     }
 
+    // RENDERIZAR EN CATALOGO
     function renderUserCatalog() {
         if (!servicesContainer) return;
         servicesContainer.innerHTML = "";
 
         if (!Array.isArray(servicesData) || servicesData.length === 0) {
-            servicesContainer.innerHTML = `<p style="color: #666; font-size: 16px; text-align: center; padding: 20px;">No hay servicios disponibles en este momento.</p>`;
+            servicesContainer.innerHTML = <p style="color: #666; font-size: 16px; text-align: center; padding: 20px; grid-column: 1/-1;">No hay servicios en el catálogo.</p>;
             return;
         }
 
         servicesData.forEach(srv => {
-            const pGrande = parseFloat(srv.precio_grande || srv.precioGrande || srv.precio || 0).toFixed(2);
-            const pMediano = parseFloat(srv.precio_mediano || srv.precioMediano || srv.precio || 0).toFixed(2);
-            const pChico = parseFloat(srv.precio_chico || srv.precioChico || srv.precioPequeño || srv.precio_pequeno || srv.precio || 0).toFixed(2);
-            const foto = srv.imagen || srv.foto || 'img/default-service.png';
+            const idServ = srv.id_servicio || srv.id;
+            const pGrande = parseFloat(srv.precio_grande || 0).toFixed(2);
+            const pMediano = parseFloat(srv.precio_mediano || 0).toFixed(2);
+            const pChico = parseFloat(srv.precio_pequeno || 0).toFixed(2);
+            const foto = srv.foto || 'img/default-service.png';
             const desc = srv.descripcion || '';
+            const tituloVal = srv.titulo || srv.nombre || '';
 
-            const detallesRaw = srv.titulo_corto || srv.tituloCorto || srv.detalles || '';
-            const lineas = typeof detallesRaw === 'string' 
-                ? detallesRaw.split('\n').map(d => d.trim()).filter(d => d.length > 0)
-                : (Array.isArray(detallesRaw) ? detallesRaw : []);
+            const lineas = typeof tituloVal === 'string' 
+                ? tituloVal.split('\n').map(d => d.trim()).filter(d => d.length > 0)
+                : [];
             
             const listaDetallesHtml = lineas.length > 0
-                ? lineas.map(linea => `<li>• ${linea}</li>`).join('')
-                : `<li>• Sin detalles especificados</li>`;
+                ? lineas.map(linea => <li>• ${linea}</li>).join('')
+                : <li>• ${tituloVal}</li>;
 
             const card = document.createElement('div');
             card.className = 'service-card';
             card.innerHTML = `
                 <img src="${foto}" alt="${srv.nombre}" onerror="this.src='img/default-service.png'">
-                <div class="service-info">
+                <div class="service-info" style="flex-grow: 1;">
                     <h3>${srv.nombre}</h3>
                     <p style="color: #607285; font-size: 14px; margin-bottom: 15px;">${desc}</p>
                     
@@ -106,61 +97,141 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                 </div>
+
+                <div class="options-container">
+                    <i class="fa-solid fa-ellipsis-vertical card-options" onclick="toggleOptionsMenu(event, ${idServ})"></i>
+                    <div class="options-dropdown" id="dropdown-${idServ}">
+                        <div class="dropdown-item edit-opt" onclick="abrirEditarServicio(${idServ})">
+                            <i class="fa-solid fa-pen-to-square"></i> Editar
+                        </div>
+                        <div class="dropdown-item delete-opt" onclick="eliminarServicio(${idServ})">
+                            <i class="fa-solid fa-trash"></i> Eliminar
+                        </div>
+                    </div>
+                </div>
             `;
             servicesContainer.appendChild(card);
         });
     }
 
-// -------------------------------------------------------------------
-    // GUARDAR SERVICIO (Estructura original de tu proyecto)
-    // -------------------------------------------------------------------
-    const formServicio = document.getElementById('formServicio');
+    // ⚡ FUNCIÓN CLAVE: COMPRIMIR IMAGEN A MENOS DE 100KB ANTES DE ENVIAR (EVITA ERROR 400)
+    function compressAndConvertImage(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 600; // Redimensionar a tamaño óptimo
+                    const scaleFactor = MAX_WIDTH / img.width;
+                    
+                    if (img.width > MAX_WIDTH) {
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = img.height * scaleFactor;
+                    } else {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                    }
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    // Exportar como JPEG al 70% de calidad
+                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                };
+                img.onerror = error => reject(error);
+            };
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    // SUBMIT DEL FORMULARIO
     if (formServicio) {
         formServicio.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const nombre = document.getElementById('nombreServicio')?.value.trim() || "";
-            const descripcion = document.getElementById('descServicio')?.value.trim() || "";
-            const detalles = document.getElementById('detallesServicio')?.value.trim() || "";
-            const precioRaw = document.getElementById('precioServicio')?.value.trim() || "";
-            const inputImagen = document.getElementById('imagenServicio');
+            const inputNombre = document.getElementById('nombreServicio');
+            const inputDesc = document.getElementById('descServicio');
+            const inputDetalles = document.getElementById('detallesServicio');
+            const inputPGrande = document.getElementById('precioGrande');
+            const inputPMediano = document.getElementById('precioMediano');
+            const inputPChico = document.getElementById('precioChico');
+            const fileInput = document.getElementById('imagenServicio');
 
-            // Extraemos los números ingresados en el campo de precios
-            const numeros = precioRaw.match(/\d+(\.\d+)?/g) || [0];
-            const pGrande = parseFloat(numeros[0] || 0);
-            const pMediano = parseFloat(numeros[1] || numeros[0] || 0);
-            const pChico = parseFloat(numeros[2] || numeros[0] || 0);
-
-            const formData = new FormData();
-            formData.append('nombre', nombre);
-            formData.append('descripcion', descripcion);
-            formData.append('titulo_corto', detalles);
-            
-            // Enviamos los campos de precio con las variantes comunes del backend
-            formData.append('precio_grande', pGrande);
-            formData.append('precio_mediano', pMediano);
-            formData.append('precio_chico', pChico);
-            formData.append('precio', pGrande); // Por compatibilidad si la API exige 'precio'
-
-            if (inputImagen && inputImagen.files[0]) {
-                formData.append('imagen', inputImagen.files[0]);
+            let fotoFinal = 'img/default-service.png';
+            if (fileInput && fileInput.files && fileInput.files[0]) {
+                try {
+                    fotoFinal = await compressAndConvertImage(fileInput.files[0]);
+                } catch (e) {
+                    console.error("Error al procesar la imagen:", e);
+                }
             }
 
+            const payload = {
+                nombre: inputNombre ? inputNombre.value.trim() : 'Servicio sin nombre',
+                titulo: inputDetalles ? inputDetalles.value.trim() : 'Sin detalles',
+                descripcion: inputDesc ? inputDesc.value.trim() : '',
+                foto: fotoFinal,
+                precio_grande: parseFloat(inputPGrande?.value) || 0,
+                precio_mediano: parseFloat(inputPMediano?.value) || 0,
+                precio_pequeno: parseFloat(inputPChico?.value) || 0
+            };
+
+            const urlCompleta = ${URL_BASE}${servicioEditandoId ? /servicios/${servicioEditandoId} : '/servicios'};
+            const metodo = servicioEditandoId ? 'PUT' : 'POST';
+
             try {
-                const respuesta = await apiFetch('/servicios', {
-                    method: 'POST',
-                    body: formData
+                const respuesta = await fetch(urlCompleta, {
+                    method: metodo,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
                 });
 
-                alert('¡Servicio guardado con éxito!');
-                modalServicio.style.display = 'none';
+                const data = await respuesta.json();
+
+                if (!respuesta.ok || !data.ok) {
+                    throw new Error(data.mensaje || Error ${respuesta.status});
+                }
+
+                alert(servicioEditandoId ? '¡Servicio actualizado!' : '¡Servicio guardado con éxito!');
+                if (modalServicio) modalServicio.style.display = 'none';
                 formServicio.reset();
-                fetchServices(); // Recarga la lista dinámicamente sin recargar toda la página
+                servicioEditandoId = null;
+                fetchServices();
+
             } catch (err) {
-                console.error('Error detallado:', err);
-                alert(`Error al guardar: ${err.message}`);
+                alert(Error al guardar servicio: ${err.message});
             }
         });
     }
+
+    // MENÚ FLOTANTE Y ELIMINAR/EDITAR
+    window.toggleOptionsMenu = function(e, id) {
+        e.stopPropagation();
+        document.querySelectorAll('.options-dropdown').forEach(d => {
+            if (d.id !== dropdown-${id}) d.classList.remove('show');
+        });
+        const drop = document.getElementById(dropdown-${id});
+        if (drop) drop.classList.toggle('show');
+    };
+
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.options-dropdown').forEach(d => d.classList.remove('show'));
+    });
+
+    window.eliminarServicio = async function(id) {
+        if (!confirm('¿Seguro que deseas eliminar este servicio?')) return;
+        try {
+            const res = await fetch(${URL_BASE}/servicios/${id}, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok || !data.ok) throw new Error(data.mensaje);
+            alert('Servicio eliminado');
+            fetchServices();
+        } catch (e) {
+            alert(Error: ${e.message});
+        }
+    };
+
     fetchServices();
 });

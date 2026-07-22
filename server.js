@@ -8,6 +8,7 @@ const serviciosRoutes = require('./routes/serviciosRoutes');
 const citasRoutes = require('./routes/citasRoutes');
 const gananciasRoutes = require('./routes/gananciasRoutes');
 const perfilRoutes = require('./routes/perfilRoutes');
+const reservasRoutes = require('./routes/reservasRoutes'); // 👈 Se importa la ruta de Reservas
 
 const path = require('path');
 const app = express();
@@ -37,6 +38,7 @@ app.get('/', (req, res) => {
 app.use('/api/mascotas', mascotasRoutes);
 app.use('/api/servicios', serviciosRoutes);
 app.use('/api/citas', citasRoutes);
+app.use('/api/reservas', reservasRoutes); 
 app.use('/api/ganancias', gananciasRoutes);
 app.use('/api/perfil', perfilRoutes);
 
@@ -46,5 +48,5 @@ app.use('/api', authRoutes);
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, () => {
-  console.log(`PawCARE API corriendo en el puerto ${PORT}`);
+  console.log(PawCARE API corriendo en el puerto ${PORT});
 });
