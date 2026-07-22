@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PawCARE - Crear cuenta</title>
+  <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+  <main class="login-card registration-card">
+    <img src="img/logo-pawcare.png" alt="Logo PawCARE" class="logo">
+    <h1 class="welcome-title">CREA TU CUENTA</h1>
+    <div class="user-icon"><img src="img/usergenerall.png" alt="Usuario" class="user-image"></div>
+
+    <form id="registerForm" novalidate>
+      <div class="form-row">
+        <div>
+          <label for="nombre">Nombre completo</label>
+          <input id="nombre" name="nombre" type="text" autocomplete="name" required>
+        </div>
+        <div>
+          <label for="usuario">Nombre de usuario</label>
+          <input id="usuario" name="usuario" type="text" autocomplete="username" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label for="correo">Correo electrónico</label>
+          <input id="correo" name="correo" type="email" autocomplete="email" required>
+        </div>
+        <div>
+          <label for="telefono">Teléfono</label>
+          <input id="telefono" name="telefono" type="tel" autocomplete="tel" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label for="contrasena">Contraseña</label>
+          <input id="contrasena" name="contrasena" type="password" autocomplete="new-password" minlength="6" required>
+        </div>
+        <div>
+          <label for="confirmacion">Confirmar contraseña</label>
+          <input id="confirmacion" name="confirmacion" type="password" autocomplete="new-password" minlength="6" required>
+        </div>
+      </div>
+      <button type="submit" class="login-btn">CREAR CUENTA</button>
+      <p class="auth-switch">¿Ya tienes cuenta? <a href="login.html">Iniciar sesión</a></p>
+      <p id="formMessage" class="auth-switch" role="alert" hidden></p>
+    </form>
+  </main>
+
+  <script src="js/config.js"></script>
+  <script src="js/registro.js"></script>
+</body>
+</html>

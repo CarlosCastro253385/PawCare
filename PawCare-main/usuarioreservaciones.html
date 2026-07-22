@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PawCare - Reservaciones</title>
+    <link rel="stylesheet" href="css/layout-common.css">
+    <link rel="stylesheet" href="css/usuarioreservaciones.css">
+    <link rel="stylesheet" href="css/sidebar-common.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+            <aside class="sidebar" id="sidebar">
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Abrir/cerrar menú"><i class="fa-solid fa-bars"></i></button>
+                <nav class="sidebar-nav">
+               <a href="index.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-house"></i></span><span class="sidebar-label">Inicio</span></a>
+                <a href="usuarioservicios.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-star"></i></span><span class="sidebar-label">Servicios</span></a>
+                <a href="usuarioreservaciones.html" class="sidebar-link active"><span class="sidebar-icon"><i class="fa-solid fa-calendar-days"></i></span><span class="sidebar-label">Reservas</span></a>
+                <a href="usuariomascotas.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-paw"></i></span><span class="sidebar-label">Mascotas</span></a>
+                </nav>
+                <a href="perfilusuario.html" class="sidebar-admin">
+                    <span class="sidebar-icon"><img class="icono" src="img/usergenerall.png" alt=""></span>
+                    <span class="sidebar-label">Usuario</span>
+                </a>
+            </aside>
+
+            <main class="main-content">
+                <div class="glass-panel">
+                    <div class="content-header">
+                        <h1>Reservaciones</h1>
+                        <button id="btnAgregar" class="btn-primario">+ Agregar Reservacion</button>
+                    </div>
+
+                    <section id="vistaCalendario" class="vista activa">
+                        <input type="text" class="barra-busqueda" placeholder="Buscar reservacion...">
+                        <div class="calendario">
+                            <div class="calendario-header">
+                                <button class="flecha-mes" id="mesAnterior">&#10094;</button>
+                                <span class="mes-nombre" id="mesNombre">Junio</span>
+                                <button class="flecha-mes" id="mesSiguiente">&#10095;</button>
+                            </div>
+                            <div class="dias-semana">
+                                <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
+                            </div>
+                            <div class="dias-grid" id="diasGrid">
+                                <!-- Los dias se generan con JavaScript -->
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- VISTA 2: FORMULARIO NUEVA RESERVA -->
+                    <section id="vistaFormulario" class="vista">
+                        <form id="formReserva">
+                            <div class="form-fila">
+                                <div class="form-grupo">
+                                    <label for="mesReserva">Mes: </label>
+                                    <select id="mesReserva" class="select-fecha select-mes" required>
+                                        <option value="Enero">Enero</option>
+                                        <option value="Febrero">Febrero</option>
+                                        <option value="Marzo">Marzo</option>
+                                        <option value="Abril">Abril</option>
+                                        <option value="Mayo">Mayo</option>
+                                        <option value="Junio" selected>Junio</option>
+                                        <option value="Julio">Julio</option>
+                                        <option value="Agosto">Agosto</option>
+                                        <option value="Septiembre">Septiembre</option>
+                                        <option value="Octubre">Octubre</option>
+                                        <option value="Noviembre">Noviembre</option>
+                                        <option value="Diciembre">Diciembre</option>
+                                    </select>
+                                </div>
+                                <div class="form-grupo">
+                                    <label for="fechaIngreso">Fecha de ingreso: </label>
+                                    <select id="fechaIngreso" class="select-fecha" required>
+                                        <option value="">Selecciona</option>
+                                    </select>
+                                </div>
+                                <div class="form-grupo">
+                                    <label for="fechaSalida">Fecha de salida: </label>
+                                    <select id="fechaSalida" class="select-fecha" required>
+                                        <option value="">Selecciona</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-grupo" style="margin-top: 18px;">
+                                <label for="nombreCliente">Nombre del cliente:</label>
+                                <div class="campo-editable">
+                                    <input type="text" id="nombreCliente" name="nombreCliente" placeholder="Nombre completo" required>
+                                    <span class="icono-editar">&#9998;</span>
+                                </div>
+                            </div>
+                            <div class="form-grupo" style="margin-top:14px;">
+                                <label for="telefonoCliente">Numero de telefono:</label>
+                                <div class="campo-editable">
+                                    <input type="tel" id="telefonoCliente" name="telefonoCliente" placeholder="Ej. 961 123 4567" required>
+                                    <span class="icono-editar">&#9998;</span>
+                                </div>
+                            </div>
+                            <div class="form-grupo" style="margin-top:14px;">
+                                <label for="nombreMascota">Nombre de la mascota: </label>
+                                <div class="campo-editable">
+                                    <input type="text" id="nombreMascota" name="nombreMascota" required>
+                                    <span class="icono-editar">&#9998;</span>
+                                </div>
+                            </div>
+                            <div class="form-grupo" style="margin-top:14px;">
+                                <label for="edadMascota">Edad: </label>
+                                <div class="campo-editable">
+                                    <input type="text" id="edadMascota" name="edadMascota" required>
+                                    <span class="icono-editar">&#9998;</span>
+                                </div>
+                            </div>
+                            <div class="form-grupo" style="margin-top:14px;">
+                                <label for="razaMascota">Raza:</label>
+                                <div class="campo-editable">
+                                    <input type="text" id="razaMascota" name="razaMascota" required>
+                                    <span class="icono-editar">&#9998;</span>
+                                </div>
+                            </div>
+                            <div class="form-acciones">
+                                <button type="button" id="btnCancelar" class="btn-secundario">Cancelar</button>
+                                <button type="submit" class="btn-primario">Guardar reservacion</button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            </main>
+    </div>
+
+    <!-- PANTALLAS EMERGENTES (MODALES DE ÉXITO Y ERROR) -->
+    <div id="modalExito" class="modal-overlay">
+        <div class="modal-box modal-box--exito">
+            <h2>¡Éxito Total!</h2>
+            <p>La reservación de tu mascota ha sido guardada de forma correcta en PawCare.</p>
+            <button id="btnCerrarExito" class="btn-modal">Aceptar</button>
+        </div>
+    </div>
+
+    <div id="modalError" class="modal-overlay">
+        <div class="modal-box modal-box--error">
+            <h2>¡Ups, un error!</h2>
+            <p>Por favor revisa las fechas. La fecha de salida no puede ser menor a la fecha de ingreso.</p>
+            <button id="btnCerrarError" class="btn-modal">Corregir</button>
+        </div>
+    </div>
+
+<script src="js/config.js"></script>
+    <script src="js/sidebar-common.js"></script>
+    <script src="js/usuarioreservaciones.js"></script>
+</body>
+</html>

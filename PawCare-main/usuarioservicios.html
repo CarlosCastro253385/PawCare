@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PawCare - Nuestros Servicios</title>
+    <!-- Reutilizamos el CSS existente para mantener el diseño idéntico -->
+    <link rel="stylesheet" href="css/layout-common.css">
+    <link rel="stylesheet" href="css/servicios.css">
+    <link rel="stylesheet" href="css/sidebar-common.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- MENÚ LATERAL DEL USUARIO -->
+        <aside class="sidebar" id="sidebar">
+            <button class="sidebar-toggle" aria-label="Abrir/cerrar menú"><i class="fa-solid fa-bars"></i></button>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-house"></i></span><span class="sidebar-label">Inicio</span></a>
+                <a href="usuarioservicios.html" class="sidebar-link active"><span class="sidebar-icon"><i class="fa-solid fa-star"></i></span><span class="sidebar-label">Servicios</span></a>
+                <a href="usuarioreservaciones.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-calendar-days"></i></span><span class="sidebar-label">Reservas</span></a>
+                <a href="usuariomascotas.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-paw"></i></span><span class="sidebar-label">Mascotas</span></a>
+            </nav>
+            <a href="perfilusuario.html" class="sidebar-admin">
+                <span class="sidebar-icon"><img class="icono" src="img/usergenerall.png" alt=""></span>
+                <span class="sidebar-label">Usuario</span>
+            </a>
+        </aside>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <main class="main-content">
+            <div class="glass-panel">
+                <header class="content-header">
+                    <h2>Servicios Disponibles</h2>
+                    <!-- SE QUITÓ EL BOTÓN "+ AGREGAR SERVICIO" -->
+                </header>
+
+                <!-- VISTA ÚNICA: CATÁLOGO DE SERVICIOS EN MODO LECTURA -->
+                <section id="view-catalog" class="content-view">
+                    <div class="services-list" id="services-container">
+                        <!-- Las tarjetas se generan dinámicamente con JS -->
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+<script src="js/config.js"></script>
+    <script src="js/sidebar-common.js"></script>
+    <script src="js/usuarioservicios.js"></script>
+</body>
+</html>

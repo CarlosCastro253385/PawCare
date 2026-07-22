@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PawCare - Mascotas</title>
+    <link rel="stylesheet" href="css/layout-common.css">
+    <link rel="stylesheet" href="css/mascotas.css">
+    <link rel="stylesheet" href="css/sidebar-common.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <button class="sidebar-toggle" aria-label="Abrir/cerrar menú"><i class="fa-solid fa-bars"></i></button>
+            <nav class="sidebar-nav">
+                <a href="index.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-house"></i></span><span class="sidebar-label">Inicio</span></a>
+                <a href="servicios.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-star"></i></span><span class="sidebar-label">Servicios</span></a>
+                <a href="mascotas.html" class="sidebar-link active"><span class="sidebar-icon"><i class="fa-solid fa-paw"></i></span><span class="sidebar-label">Mascotas</span></a>
+                <a href="reservaciones.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-calendar-days"></i></span><span class="sidebar-label">Reservas</span></a>
+                <a href="ganancias.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-credit-card"></i></span><span class="sidebar-label">Ganancias</span></a>
+            </nav>
+            <a href="perfil.html" class="sidebar-admin">
+                <span class="sidebar-icon"><img class="icono" src="img/usergenerall.png" alt="Admin"></span>
+                <span class="sidebar-label">Administrador</span>
+            </a>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="glass-panel">
+                <header class="content-header">
+                    <h2>Mascotas</h2>
+                    <button id="btn-agregar-registro" class="btn-primary"><i class="fa-solid fa-plus"></i> Agregar Registro</button>
+                </header>
+
+                <!-- Vista Grid de Tarjetas -->
+                <section id="view-grid" class="content-view">
+                    <div class="pets-grid" id="pets-container"></div>
+                </section>
+
+                <!-- Vista de Formulario / Detalle -->
+                <section id="view-form" class="content-view hidden">
+                    <div class="form-container">
+                        <div class="image-upload-box">
+                            <img id="preview-image" src="https://via.placeholder.com/150" alt="Mascota">
+                            <label for="input-file" class="upload-btn"><i class="fa-solid fa-camera-retro"></i></label>
+                            <input type="file" id="input-file" accept="image/*" class="hidden">
+                        </div>
+
+                        <!-- Subvista: Datos -->
+                        <div id="subview-data" class="sub-form-view">
+                            <form id="pet-data-form">
+                                <div class="form-section">
+                                    <h3>Mascota <span class="edit-icon-main" id="btn-edit-data" style="cursor:pointer;"><i class="fa-solid fa-pen"></i></span></h3>
+                                    <div class="input-group">
+                                        <label>Nombre</label>
+                                        <input type="text" id="form-nombre" required disabled>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Género</label>
+                                        <!-- Selector desplegable de género -->
+                                        <select id="form-genero" required disabled>
+                                            <option value="" disabled selected>Selecciona un género</option>
+                                            <option value="Masculino">Masculino</option>
+                                            <option value="Femenino">Femenino</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Edad (Años)</label>
+                                        <!-- Campo de número para la edad -->
+                                        <input type="number" id="form-edad" min="0" max="99" required disabled>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Raza</label>
+                                        <input type="text" id="form-raza" required disabled>
+                                    </div>
+                                </div>
+
+                                <div class="form-section">
+                                    <h3>Dueño</h3>
+                                    <div class="input-group">
+                                        <label>Nombre del dueño</label>
+                                        <input type="text" id="form-dueno" required disabled>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Número telefónico</label>
+                                        <input type="tel" id="form-telefono" required disabled>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions hidden" id="action-buttons">
+                                    <button type="submit" class="btn-submit">Guardar</button>
+                                    <button type="button" class="btn-cancel btn-back-grid">Cancelar</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Subvista: Indicaciones de Cuidado -->
+                        <div id="subview-cuidado" class="sub-form-view hidden">
+                            <div class="cuidado-section">
+                                <div class="cuidado-header">
+                                    <h3>Indicaciones de cuidado:</h3>
+                                    <span class="edit-icon-cuidado" id="btn-edit-cuidado" style="cursor:pointer;"><i class="fa-solid fa-pen"></i></span>
+                                </div>
+                                <div class="textarea-container">
+                                    <textarea id="form-indicaciones" placeholder="Escribe aquí las indicaciones..." disabled></textarea>
+                                </div>
+                            </div>
+                            <div class="form-actions hidden" id="cuidado-actions">
+                                <button type="button" id="btn-guardar-cuidado" class="btn-submit">Guardar</button>
+                                <button type="button" id="btn-cancelar-cuidado" class="btn-cancel">Cancelar</button>
+                            </div>
+                        </div>
+
+                        <!-- Botones laterales de acción -->
+                        <div class="side-action-buttons">
+                            <button id="btn-toggle-data" class="btn-secondary hidden"><i class="fa-solid fa-arrow-left"></i> Ver Datos</button>
+                            <button id="btn-toggle-cuidado" class="btn-secondary">Indicaciones de cuidado</button>
+                            <button id="btn-open-prescripcion" class="btn-secondary">Prescripción médica</button>
+                            <button id="btn-delete-pet" class="btn-danger"><i class="fa-solid fa-trash"></i> Eliminar Registro</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL DE CONFIRMACIÓN DE ELIMINACIÓN -->
+    <div id="confirm-delete-modal" class="modal-overlay hidden">
+        <div class="modal-box text-center">
+            <div class="modal-icon-circle danger-icon">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3>¿Estás seguro?</h3>
+            <p>Esta acción eliminará el registro de la mascota permanentemente y no se podrá deshacer.</p>
+            <div class="modal-buttons">
+                <button id="btn-confirm-delete" class="btn-danger-confirm">Sí, Eliminar</button>
+                <button id="btn-cancel-delete" class="btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE ESTADO / RETROALIMENTACIÓN -->
+    <div id="status-modal" class="modal-overlay hidden">
+        <div class="modal-box text-center">
+            <div class="modal-icon-circle" id="modal-icon-bg">
+                <i id="modal-icon" class="fa-solid"></i>
+            </div>
+            <h3 id="modal-title">CAMBIOS GUARDADOS</h3>
+            <p id="modal-message">Tus datos se registraron correctamente</p>
+            <button id="modal-close-btn" class="btn-modal-close">Entendido</button>
+        </div>
+    </div>
+
+    <!-- MODAL PRESCRIPCIÓN MÉDICA -->
+    <div id="prescripcion-modal" class="modal-overlay hidden">
+        <div class="modal-box prescripcion-box">
+            <h3>PRESCRIPCIÓN MÉDICA</h3>
+            <form id="prescripcion-form">
+                <div class="med-group">
+                    <label>Nombre del medicamento:</label>
+                    <input type="text" id="presc-nombre" placeholder="Ej. Amoxicilina">
+                </div>
+                
+                <div class="med-group">
+                    <label>Vía de Administración:</label>
+                    <div class="radio-options">
+                        <label class="radio-card">
+                            <input type="radio" name="via" value="Pastilla">
+                            <span class="radio-circle"></span> Pastilla
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="via" value="Inyección">
+                            <span class="radio-circle"></span> Inyección
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="via" value="Líquidos/Geles">
+                            <span class="radio-circle"></span> Líquidos/Geles
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="via" value="Otro" id="radio-otro">
+                            <span class="radio-circle"></span> Otro:
+                            <input type="text" id="presc-via-otro" placeholder="...">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="med-duration-container">
+                    <div class="med-group inline">
+                        <label>Duración:</label>
+                        <div class="input-inline">
+                            <span>Días:</span>
+                            <input type="number" id="presc-dias" min="1">
+                        </div>
+                    </div>
+                    <div class="med-group inline">
+                        <label>Administrar Cada:</label>
+                        <div class="input-inline">
+                            <input type="number" id="presc-cada" min="1">
+                            <span>Horas</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="prescripcion-actions">
+                    <button type="button" id="btn-guardar-prescripcion" class="btn-submit">Guardar</button>
+                    <button type="button" id="btn-cerrar-prescripcion" class="btn-cancel">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script src="js/config.js"></script>
+    <script src="js/sidebar-common.js"></script>
+    <script src="js/mascotas.js"></script>
+</body>
+</html>
