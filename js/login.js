@@ -4,7 +4,7 @@ const passwordInput = document.getElementById('password');
 const successModal = document.getElementById('successModal');
 const errorModal = document.getElementById('errorModal');
 const enterAppBtn = document.getElementById('enterAppBtn');
-const retryBtn = document.getElementById('retryBtn'); // 👈 Se agregó la referencia al botón
+const retryBtn = document.getElementById('retryBtn');
 
 [usernameInput, passwordInput].forEach((input) => {
   input.addEventListener('blur', () => input.classList.add('touched'));

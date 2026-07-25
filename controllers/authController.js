@@ -1,4 +1,3 @@
-// controllers/authController.js
 const pool = require('../config/db');
 const bcrypt = require('bcrypt');
 const SALT_ROUNDS = 10;
@@ -11,25 +10,37 @@ async function login(req, res) {
   }
 
   try {
+    // Permite iniciar sesión con USUARIO o con CORREO ELECTRONICO
     const [filas] = await pool.query(
       `SELECT u.id_usuario, u.nombre, u.usuario, u.correo, u.contrasena, u.rol, c.id_cliente
        FROM USUARIO u
        LEFT JOIN CLIENTE c ON c.id_usuario = u.id_usuario
-       WHERE u.usuario = ?`,
-      [usuario]
+       WHERE u.usuario = ? OR u.correo = ?`,
+      [usuario, usuario]
     );
 
     if (filas.length === 0) {
       return res.status(401).json({ ok: false, mensaje: 'Usuario o contraseña incorrectos.' });
     }
 
-    const coincide = await bcrypt.compare(contrasena, filas[0].contrasena);
+    const usuarioBd = filas[0];
+    
+    // Soporta contraseñas encriptadas con bcrypt y texto plano antiguo
+    const esBcrypt = usuarioBd.contrasena.startsWith('$2b$') || usuarioBd.contrasena.startsWith('$2a$');
+    let coincide = false;
+
+    if (esBcrypt) {
+      coincide = await bcrypt.compare(contrasena, usuarioBd.contrasena);
+    } else {
+      coincide = (contrasena === usuarioBd.contrasena);
+    }
+
     if (!coincide) {
       return res.status(401).json({ ok: false, mensaje: 'Usuario o contraseña incorrectos.' });
     }
 
     // Nunca regreses el hash de la contraseña al frontend
-    const { contrasena: _omitida, ...usuarioSeguro } = filas[0];
+    const { contrasena: _omitida, ...usuarioSeguro } = usuarioBd;
     return res.json({ ok: true, usuario: usuarioSeguro });
   } catch (error) {
     console.error('Error en login:', error);
