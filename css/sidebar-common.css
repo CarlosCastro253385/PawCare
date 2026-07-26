@@ -80,8 +80,7 @@
 /* Enlaces del Menú */
 .sidebar-link,
 .sidebar .menu-item,
-.sidebar-nav a,
-.sidebar .menu-links a {
+.sidebar-nav a {
   display: flex;
   align-items: center;
   gap: 16px;
@@ -103,14 +102,12 @@
 
 .sidebar-link.active,
 .sidebar .menu-item.active,
-.sidebar-nav a.activo {
+.sidebar-nav a.active {
   background: var(--sidebar-accent);
 }
 
 /* Iconos del Menú */
-.sidebar-icon,
-.sidebar .menu-item i,
-.sidebar-nav a i {
+.sidebar-icon {
   width: 24px;
   height: 24px;
   font-size: 20px;
@@ -121,16 +118,25 @@
   text-align: center;
 }
 
+/* Control estricto si la etiqueta dentro del icono es una imagen <img> */
+.sidebar-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
 /* Textos dentro del Menú */
-.menu-text,
 .sidebar-label,
-.sidebar .menu-item span,
-.sidebar-link span {
-  transition: opacity 0.2s ease, display 0.2s ease;
+.menu-text {
+  transition: opacity 0.2s ease;
   white-space: nowrap;
 }
 
-/* Perfil Inferior (User / Admin Footer) */
+/* ==========================================
+   PERFIL INFERIOR (ADMINISTRADOR FOOTER)
+   ========================================== */
 .sidebar-admin,
 .sidebar .admin-profile,
 .sidebar .user-profile,
@@ -142,28 +148,45 @@
   color: var(--sidebar-text);
   font-size: 16px;
   font-weight: 600;
+  text-decoration: none;
   margin: auto 12px 0;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.12);
   transition: padding 0.3s ease, background 0.2s ease;
+  overflow: hidden;
 }
 
+.sidebar-admin:hover,
+.sidebar-admin.active {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Contenedor del Avatar del Administrador (Solución a la imagen gigante) */
 .user-avatar,
 .admin-avatar,
 .sidebar-admin .sidebar-icon {
-  width: 36px;
-  height: 36px;
+  width: 36px !important;
+  height: 36px !important;
+  max-width: 36px !important;
+  max-height: 36px !important;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
-.user-avatar i,
-.admin-avatar i {
-  font-size: 18px;
+.sidebar-admin .sidebar-icon img,
+.sidebar-admin img.icono {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 50%;
+  display: block;
 }
 
 /* ==========================================
@@ -194,14 +217,11 @@
   background: transparent;
 }
 
-/* Ocultar textos cuando esté colapsado */
-.sidebar.collapsed .menu-text,
+/* Ocultar únicamente las etiquetas de texto cuando esté colapsado */
 .sidebar.collapsed .sidebar-label,
-.sidebar.collapsed .menu-item span,
-.sidebar.collapsed .sidebar-link span,
+.sidebar.collapsed .menu-text,
 .sidebar.collapsed .user-info,
-.sidebar.collapsed .admin-info,
-.sidebar.collapsed strong {
+.sidebar.collapsed .admin-info {
   display: none !important;
   opacity: 0;
 }
