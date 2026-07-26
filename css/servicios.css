@@ -27,7 +27,81 @@ body {
     min-height: 100vh;
 }
 
-/* MAIN CONTENT */
+/* ==========================================
+   SIDEBAR (Estilos globales compartidos)
+   ========================================== */
+.sidebar {
+    width: 260px;
+    background-color: var(--bg-sidebar);
+    color: var(--text-white);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    flex-shrink: 0;
+}
+
+.sidebar-toggle {
+    padding: 0 25px 30px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.menu {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex-grow: 1;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px 25px;
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.menu-item i {
+    font-size: 20px;
+    width: 25px;
+}
+
+.menu-item:hover, .menu-item.active {
+    background-color: var(--bg-active);
+    color: var(--text-white);
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+    margin-right: 15px;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px 25px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.user-avatar {
+    width: 45px;
+    height: 45px;
+    background: var(--text-white);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bg-sidebar);
+    font-size: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+/* ==========================================
+   CONTENIDO PRINCIPAL
+   ========================================== */
 .main-content {
     flex-grow: 1;
     padding: 40px;
@@ -70,15 +144,14 @@ body {
     font-weight: 600;
     cursor: pointer;
     box-shadow: 0 4px 10px rgba(93, 173, 226, 0.4);
-    transition: transform 0.2s, background 0.2s;
+    transition: transform 0.2s;
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    opacity: 0.95;
 }
 
-/* CONTENEDOR DE TARJETAS DE SERVICIO (Soporta ambas clases: .services-list o .pets-grid) */
+/* CONTENEDOR Y TARJETAS DE SERVICIOS */
 .services-list, .pets-grid {
     display: flex;
     flex-direction: column;
@@ -86,7 +159,6 @@ body {
     width: 100%;
 }
 
-/* TARJETA INDIVIDUAL DE SERVICIO */
 .service-card {
     background: var(--text-white);
     border-radius: 16px;
@@ -99,11 +171,10 @@ body {
     align-items: center;
 }
 
-/* CONTROL FIJO DE IMAGEN EN LA TARJETA */
 .service-card img {
-    width: 160px !important;
-    height: 140px !important;
-    object-fit: cover !important;
+    width: 160px;
+    height: 140px;
+    object-fit: cover;
     border-radius: 12px;
     flex-shrink: 0;
 }
@@ -149,7 +220,7 @@ body {
     color: #475569;
 }
 
-/* MENÚ FLOTANTE DE OPCIONES (ADMIN) */
+/* MENÚ TRES PUNTOS (ADMIN) */
 .options-container {
     position: absolute;
     top: 20px;
@@ -162,7 +233,7 @@ body {
     font-size: 20px;
     padding: 5px 10px;
     border-radius: 50%;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.2s;
 }
 
 .card-options:hover {
@@ -170,7 +241,6 @@ body {
     color: #334155;
 }
 
-/* MENÚ DESPLEGABLE (EDITAR / ELIMINAR) */
 .options-dropdown {
     position: absolute;
     top: 35px;
@@ -205,118 +275,10 @@ body {
     background: #f8fafc;
 }
 
-.dropdown-item.edit-opt {
-    color: #0284c7;
-}
+.dropdown-item.edit-opt { color: #0284c7; }
+.dropdown-item.delete-opt { color: #ef4444; }
 
-.dropdown-item.delete-opt {
-    color: #ef4444;
-}
-
-/* LAYOUT DEL FORMULARIO DETALLE */
-.form-layout {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 50px;
-    margin: 40px 0;
-}
-
-.image-uploader {
-    width: 240px;
-    height: 240px;
-    background: #ffffff;
-    border-radius: 16px;
-    border: 1px solid var(--card-border);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    cursor: pointer;
-    overflow: hidden;
-}
-
-.image-uploader img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.fields-card {
-    background: #d1d5db;
-    width: 340px;
-    border-radius: 16px;
-    padding: 25px;
-    position: relative;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.06);
-}
-
-.card-header-icon {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 20px;
-    color: #1e293b;
-    cursor: pointer;
-}
-
-#servicio-data-form {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 15px;
-}
-
-.custom-input {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.custom-input input, .custom-input textarea {
-    width: 100%;
-    padding: 10px 35px 10px 15px;
-    background: #9ca3af;
-    border: 1px solid rgba(0,0,0,0.1);
-    border-radius: 8px;
-    color: #1f2937;
-    font-size: 14px;
-    font-weight: 500;
-    outline: none;
-    resize: none;
-}
-
-.form-actions {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-    margin-top: 20px;
-}
-
-.btn-success {
-    background-color: var(--btn-green);
-    color: #1e3a1e;
-    border: none;
-    padding: 12px 45px;
-    border-radius: 25px;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 4px 15px rgba(141, 246, 67, 0.3);
-}
-
-.btn-danger {
-    background-color: var(--btn-red);
-    color: var(--text-white);
-    border: none;
-    padding: 12px 45px;
-    border-radius: 25px;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 4px 15px rgba(217, 56, 56, 0.3);
-}
-
-/* MODALES SUPERPUESTOS */
+/* MODAL Y FORMULARIO */
 .modal-overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -335,12 +297,6 @@ body {
     text-align: center;
     width: 460px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    animation: scaleUp 0.3s ease-out;
 }
 
 .hidden { display: none !important; }
-
-@keyframes scaleUp {
-    from { transform: scale(0.8); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
