@@ -13,39 +13,20 @@
 <body>
     <div class="app-container">
         
-        <aside class="sidebar">
-            <div class="sidebar-toggle">
-                <i class="fa-solid fa-bars"></i>
-            </div>
-
-            <nav class="menu">
-                <a href="dashboard.html" class="menu-item">
-                    <i class="fa-solid fa-house"></i>
-                    <span class="menu-text">Inicio</span>
-                </a>
-                <a href="servicios.html" class="menu-item active">
-                    <i class="fa-solid fa-scissors"></i>
-                    <span class="menu-text">Servicios</span>
-                </a>
-                <a href="citas.html" class="menu-item">
-                    <i class="fa-solid fa-calendar-days"></i>
-                    <span class="menu-text">Citas</span>
-                </a>
-                <a href="mascotas.html" class="menu-item">
-                    <i class="fa-solid fa-paw"></i>
-                    <span class="menu-text">Mascotas</span>
-                </a>
-            </nav>
-
-            <div class="user-profile">
-                <div class="user-avatar">
-                    <i class="fa-solid fa-user"></i>
-                </div>
-                <div class="user-info">
-                    <strong>Admin</strong>
-                </div>
-            </div>
-        </aside>
+<aside class="sidebar" id="sidebar">
+    <button class="sidebar-toggle" aria-label="Abrir/cerrar menú"><i class="fa-solid fa-bars"></i></button>
+    <nav class="sidebar-nav">
+        <a href="index.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-house"></i></span><span class="sidebar-label">Inicio</span></a>
+        <a href="servicios.html" class="sidebar-link active"><span class="sidebar-icon"><i class="fa-solid fa-star"></i></span><span class="sidebar-label">Servicios</span></a>
+        <a href="mascotas.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-paw"></i></span><span class="sidebar-label">Mascotas</span></a>
+        <a href="reservaciones.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-calendar-days"></i></span><span class="sidebar-label">Reservas</span></a>
+        <a href="ganancias.html" class="sidebar-link"><span class="sidebar-icon"><i class="fa-solid fa-credit-card"></i></span><span class="sidebar-label">Ganancias</span></a>
+    </nav>
+    <a href="perfil.html" class="sidebar-admin">
+        <span class="sidebar-icon"><img class="icono" src="img/usergenerall.png" alt="Admin"></span>
+        <span class="sidebar-label">Administrador</span>
+    </a>
+</aside>
 
         <main class="main-content">
             <div class="glass-panel">
@@ -83,7 +64,6 @@
                     <textarea id="descServicio" rows="2" placeholder="Descripción breve del servicio..." style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; resize: none;"></textarea>
                 </div>
 
-                <!-- PRECIOS POR TAMAÑO -->
                 <div style="background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0;">
                     <label style="font-size: 13px; font-weight: bold; color: #1e293b; display: block; margin-bottom: 8px;">Precios por Tamaño ($):</label>
                     <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
@@ -115,6 +95,7 @@
         </div>
     </div>
 
+    <script src="js/config.js"></script>
     <script src="js/sidebar-common.js"></script>
     <script src="js/servicios.js"></script>
 </body>
