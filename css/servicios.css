@@ -10,7 +10,6 @@
     --card-border: #e2e8f0;
 }
 
-/* Corregido: Se agregó el selector '*' que faltaba */
 * {
     margin: 0;
     padding: 0;
@@ -28,6 +27,7 @@ body {
     min-height: 100vh;
 }
 
+/* MAIN CONTENT */
 .main-content {
     flex-grow: 1;
     padding: 40px;
@@ -60,6 +60,7 @@ body {
     font-weight: 600;
 }
 
+/* BOTONES */
 .btn-primary {
     background-color: var(--btn-blue);
     color: var(--text-white);
@@ -69,84 +70,161 @@ body {
     font-weight: 600;
     cursor: pointer;
     box-shadow: 0 4px 10px rgba(93, 173, 226, 0.4);
+    transition: transform 0.2s, background 0.2s;
 }
 
-/* GRID DE TARJETAS CORREGIDO */
-.pets-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 25px;
-    align-items: start;
+.btn-primary:hover {
+    transform: translateY(-2px);
+    opacity: 0.95;
 }
 
-.pet-card {
-    background: #ffffff;
-    border-radius: 20px;
-    padding: 20px;
+/* CONTENEDOR DE TARJETAS DE SERVICIO (Soporta ambas clases: .services-list o .pets-grid) */
+.services-list, .pets-grid {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    gap: 25px;
+    width: 100%;
+}
+
+/* TARJETA INDIVIDUAL DE SERVICIO */
+.service-card {
+    background: var(--text-white);
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    gap: 25px;
     position: relative;
     box-shadow: 0 4px 15px rgba(0,0,0,0.04);
     border: 1px solid var(--card-border);
-    cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    overflow: hidden; /* Evita que las imágenes se salgan de la tarjeta */
+    align-items: center;
 }
 
-.pet-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-}
-
-/* CONTROL Y AJUSTE DE IMÁGENES EN LAS TARJETAS (Agregado) */
-.pet-card img {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
+/* CONTROL FIJO DE IMAGEN EN LA TARJETA */
+.service-card img {
+    width: 160px !important;
+    height: 140px !important;
+    object-fit: cover !important;
     border-radius: 12px;
+    flex-shrink: 0;
+}
+
+.service-info {
+    flex-grow: 1;
+}
+
+.service-info h3 {
+    color: #34495e;
+    font-size: 22px;
+    margin-bottom: 12px;
+}
+
+.pricing-grid {
+    display: flex;
+    gap: 40px;
+}
+
+.price-column h4 {
+    color: #7f8c8d;
+    font-size: 13px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.price-column ul {
+    list-style: none;
     margin-bottom: 10px;
+    padding: 0;
 }
 
-.delete-card-icon {
+.price-column ul li {
+    font-size: 12px;
+    color: #95a5a6;
+    margin-bottom: 3px;
+}
+
+.price-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: #475569;
+}
+
+/* MENÚ FLOTANTE DE OPCIONES (ADMIN) */
+.options-container {
     position: absolute;
-    top: 15px;
-    right: 15px;
-    color: #ef4444;
+    top: 20px;
+    right: 20px;
+}
+
+.card-options {
+    color: #94a3b8;
     cursor: pointer;
-    font-size: 16px;
-    padding: 5px;
-    background: rgba(255, 255, 255, 0.8);
+    font-size: 20px;
+    padding: 5px 10px;
     border-radius: 50%;
-    z-index: 2;
+    transition: background 0.2s, color 0.2s;
 }
 
-.pet-card h4 {
-    margin-top: 8px;
-    font-size: 18px;
+.card-options:hover {
+    background: #f1f5f9;
     color: #334155;
-    text-align: center;
 }
 
-.pet-card p {
+/* MENÚ DESPLEGABLE (EDITAR / ELIMINAR) */
+.options-dropdown {
+    position: absolute;
+    top: 35px;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    z-index: 100;
+    width: 140px;
+    overflow: hidden;
+    display: none;
+}
+
+.options-dropdown.show {
+    display: block;
+}
+
+.dropdown-item {
+    padding: 12px 15px;
     font-size: 14px;
-    color: #64748b;
-    margin-top: 4px;
-    text-align: center;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.2s;
 }
 
-/* LAYOUT DEL FORMULARIO */
+.dropdown-item:hover {
+    background: #f8fafc;
+}
+
+.dropdown-item.edit-opt {
+    color: #0284c7;
+}
+
+.dropdown-item.delete-opt {
+    color: #ef4444;
+}
+
+/* LAYOUT DEL FORMULARIO DETALLE */
 .form-layout {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    gap: 40px;
-    margin: 20px 0;
+    gap: 50px;
+    margin: 40px 0;
 }
 
 .image-uploader {
-    width: 220px;
-    height: 220px;
+    width: 240px;
+    height: 240px;
     background: #ffffff;
     border-radius: 16px;
     border: 1px solid var(--card-border);
@@ -167,7 +245,7 @@ body {
 
 .fields-card {
     background: #d1d5db;
-    width: 380px;
+    width: 340px;
     border-radius: 16px;
     padding: 25px;
     position: relative;
@@ -186,7 +264,7 @@ body {
 #servicio-data-form {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     margin-top: 15px;
 }
 
@@ -209,23 +287,10 @@ body {
     resize: none;
 }
 
-.custom-input input:disabled, .custom-input textarea:disabled {
-    opacity: 0.8;
-    cursor: not-allowed;
-}
-
-.custom-input i {
-    position: absolute;
-    right: 12px;
-    color: #4b5563;
-    font-size: 13px;
-    pointer-events: none;
-}
-
 .form-actions {
     display: flex;
     justify-content: center;
-    gap: 20px;
+    gap: 30px;
     margin-top: 20px;
 }
 
@@ -233,23 +298,25 @@ body {
     background-color: var(--btn-green);
     color: #1e3a1e;
     border: none;
-    padding: 12px 35px;
+    padding: 12px 45px;
     border-radius: 25px;
     font-weight: 700;
     cursor: pointer;
+    box-shadow: 0 4px 15px rgba(141, 246, 67, 0.3);
 }
 
 .btn-danger {
     background-color: var(--btn-red);
     color: var(--text-white);
     border: none;
-    padding: 12px 35px;
+    padding: 12px 45px;
     border-radius: 25px;
     font-weight: 700;
     cursor: pointer;
+    box-shadow: 0 4px 15px rgba(217, 56, 56, 0.3);
 }
 
-/* MODALES */
+/* MODALES SUPERPUESTOS */
 .modal-overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -266,8 +333,14 @@ body {
     border-radius: 24px;
     padding: 30px 40px;
     text-align: center;
-    width: 420px;
+    width: 460px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    animation: scaleUp 0.3s ease-out;
 }
 
 .hidden { display: none !important; }
+
+@keyframes scaleUp {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
