@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administrar Servicios - PawCARE</title>
-    <!-- FontAwesome para los íconos del sidebar y botones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <link rel="stylesheet" href="css/layout-common.css">
@@ -14,7 +13,6 @@
 <body>
     <div class="app-container">
         
-        <!-- SIDEBAR INTEGRADO -->
         <aside class="sidebar">
             <div class="sidebar-toggle">
                 <i class="fa-solid fa-bars"></i>
@@ -23,19 +21,19 @@
             <nav class="menu">
                 <a href="dashboard.html" class="menu-item">
                     <i class="fa-solid fa-house"></i>
-                    <span>Inicio</span>
+                    <span class="menu-text">Inicio</span>
                 </a>
                 <a href="servicios.html" class="menu-item active">
                     <i class="fa-solid fa-scissors"></i>
-                    <span>Servicios</span>
+                    <span class="menu-text">Servicios</span>
                 </a>
                 <a href="citas.html" class="menu-item">
                     <i class="fa-solid fa-calendar-days"></i>
-                    <span>Citas</span>
+                    <span class="menu-text">Citas</span>
                 </a>
                 <a href="mascotas.html" class="menu-item">
                     <i class="fa-solid fa-paw"></i>
-                    <span>Mascotas</span>
+                    <span class="menu-text">Mascotas</span>
                 </a>
             </nav>
 
@@ -49,7 +47,6 @@
             </div>
         </aside>
 
-        <!-- CONTENIDO PRINCIPAL -->
         <main class="main-content">
             <div class="glass-panel">
                 
@@ -59,7 +56,6 @@
                         <button class="btn-primary" id="btn-agregar-servicio">+ Nuevo Servicio</button>
                     </div>
                     <div id="services-container" class="services-list">
-                        <!-- Se llena dinámicamente con servicios.js -->
                     </div>
                 </div>
 
@@ -67,7 +63,6 @@
         </main>
     </div>
 
-    <!-- MODAL EMERGENTE CREAR / EDITAR SERVICIO -->
     <div id="modalServicio" class="modal-overlay" style="display: none;">
         <div class="modal-box" style="width: 500px; text-align: left;">
             <h3 id="modalTitulo" style="margin-bottom: 15px; font-size: 20px;">Nuevo Servicio</h3>
@@ -80,7 +75,7 @@
 
                 <div>
                     <label style="font-size: 12px; font-weight: bold; color: #475569;">Detalles / Títulos clave:</label>
-                    <input type="text" id="detallesServicio" placeholder="Ej. Incluye secado, corte de uñas" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                    <input type="text" id="detallesServicio" placeholder="Ej. Incluye baño y secado" required style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
                 </div>
 
                 <div>
@@ -120,7 +115,6 @@
         </div>
     </div>
 
-    <!-- SCRIPTS DE NAVEGACIÓN Y LÓGICA -->
     <script src="js/sidebar-common.js"></script>
     <script src="js/servicios.js"></script>
 </body>
