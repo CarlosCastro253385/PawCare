@@ -8,7 +8,6 @@ const serviciosRoutes = require('./routes/serviciosRoutes');
 const citasRoutes = require('./routes/citasRoutes');
 const gananciasRoutes = require('./routes/gananciasRoutes');
 const perfilRoutes = require('./routes/perfilRoutes');
-const reservasRoutes = require('./routes/reservasRoutes'); 
 
 const path = require('path');
 const app = express();
@@ -31,7 +30,7 @@ app.get('/', (req, res) => {
 app.use('/api/mascotas', mascotasRoutes);
 app.use('/api/servicios', serviciosRoutes);
 app.use('/api/citas', citasRoutes);
-app.use('/api/reservas', reservasRoutes); 
+app.use('/api/reservas', citasRoutes); // 👈 Apunta a citasRoutes directamente
 app.use('/api/ganancias', gananciasRoutes);
 app.use('/api/perfil', perfilRoutes);
 
