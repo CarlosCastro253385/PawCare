@@ -32,8 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchServices() {
         if (!servicesContainer) return;
         try {
-            const respuesta = await fetch(${URL_BASE}/servicios);
-            if (!respuesta.ok) throw new Error(Error ${respuesta.status});
+            // ⚡ CORREGIDO: agregadas comillas invertidas
+            const respuesta = await fetch(`${URL_BASE}/servicios`);
+            if (!respuesta.ok) throw new Error(`Error ${respuesta.status}`);
             
             const data = await respuesta.json();
             servicesData = data.servicios || data.data || data;
@@ -50,7 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
         servicesContainer.innerHTML = "";
 
         if (!Array.isArray(servicesData) || servicesData.length === 0) {
-            servicesContainer.innerHTML = <p style="color: #666; font-size: 16px; text-align: center; padding: 20px; grid-column: 1/-1;">No hay servicios en el catálogo.</p>;
+            // ⚡ CORREGIDO: agregadas comillas invertidas
+            servicesContainer.innerHTML = `<p style="color: #666; font-size: 16px; text-align: center; padding: 20px; grid-column: 1/-1;">No hay servicios en el catálogo.</p>`;
             return;
         }
 
@@ -67,9 +69,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? tituloVal.split('\n').map(d => d.trim()).filter(d => d.length > 0)
                 : [];
             
+            // ⚡ CORREGIDO: agregadas comillas invertidas
             const listaDetallesHtml = lineas.length > 0
-                ? lineas.map(linea => <li>• ${linea}</li>).join('')
-                : <li>• ${tituloVal}</li>;
+                ? lineas.map(linea => `<li>• ${linea}</li>`).join('')
+                : `<li>• ${tituloVal}</li>`;
 
             const card = document.createElement('div');
             card.className = 'service-card';
@@ -114,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ⚡ FUNCIÓN CLAVE: COMPRIMIR IMAGEN A MENOS DE 100KB ANTES DE ENVIAR (EVITA ERROR 400)
+    // COMPRIMIR IMAGEN A MENOS DE 100KB ANTES DE ENVIAR
     function compressAndConvertImage(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -124,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 img.src = event.target.result;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 600; // Redimensionar a tamaño óptimo
+                    const MAX_WIDTH = 600;
                     const scaleFactor = MAX_WIDTH / img.width;
                     
                     if (img.width > MAX_WIDTH) {
@@ -137,7 +140,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    // Exportar como JPEG al 70% de calidad
                     resolve(canvas.toDataURL('image/jpeg', 0.7));
                 };
                 img.onerror = error => reject(error);
@@ -178,7 +180,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 precio_pequeno: parseFloat(inputPChico?.value) || 0
             };
 
-            const urlCompleta = ${URL_BASE}${servicioEditandoId ? /servicios/${servicioEditandoId} : '/servicios'};
+            // ⚡ CORREGIDO: agregadas comillas invertidas
+            const urlCompleta = `${URL_BASE}${servicioEditandoId ? `/servicios/${servicioEditandoId}` : '/servicios'}`;
             const metodo = servicioEditandoId ? 'PUT' : 'POST';
 
             try {
@@ -191,7 +194,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await respuesta.json();
 
                 if (!respuesta.ok || !data.ok) {
-                    throw new Error(data.mensaje || Error ${respuesta.status});
+                    // ⚡ CORREGIDO: agregadas comillas invertidas
+                    throw new Error(data.mensaje || `Error ${respuesta.status}`);
                 }
 
                 alert(servicioEditandoId ? '¡Servicio actualizado!' : '¡Servicio guardado con éxito!');
@@ -201,7 +205,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetchServices();
 
             } catch (err) {
-                alert(Error al guardar servicio: ${err.message});
+                // ⚡ CORREGIDO: agregadas comillas invertidas
+                alert(`Error al guardar servicio: ${err.message}`);
             }
         });
     }
@@ -210,9 +215,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.toggleOptionsMenu = function(e, id) {
         e.stopPropagation();
         document.querySelectorAll('.options-dropdown').forEach(d => {
-            if (d.id !== dropdown-${id}) d.classList.remove('show');
+            // ⚡ CORREGIDO: agregadas comillas invertidas
+            if (d.id !== `dropdown-${id}`) d.classList.remove('show');
         });
-        const drop = document.getElementById(dropdown-${id});
+        // ⚡ CORREGIDO: agregadas comillas invertidas
+        const drop = document.getElementById(`dropdown-${id}`);
         if (drop) drop.classList.toggle('show');
     };
 
@@ -223,13 +230,15 @@ document.addEventListener('DOMContentLoaded', () => {
     window.eliminarServicio = async function(id) {
         if (!confirm('¿Seguro que deseas eliminar este servicio?')) return;
         try {
-            const res = await fetch(${URL_BASE}/servicios/${id}, { method: 'DELETE' });
+            // ⚡ CORREGIDO: agregadas comillas invertidas
+            const res = await fetch(`${URL_BASE}/servicios/${id}`, { method: 'DELETE' });
             const data = await res.json();
             if (!res.ok || !data.ok) throw new Error(data.mensaje);
             alert('Servicio eliminado');
             fetchServices();
         } catch (e) {
-            alert(Error: ${e.message});
+            // ⚡ CORREGIDO: agregadas comillas invertidas
+            alert(`Error: ${e.message}`);
         }
     };
 
