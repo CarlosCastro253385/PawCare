@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administrar Servicios - PawCARE</title>
+    <!-- FontAwesome para los íconos del sidebar y botones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <link rel="stylesheet" href="css/layout-common.css">
@@ -12,6 +13,43 @@
 </head>
 <body>
     <div class="app-container">
+        
+        <!-- SIDEBAR INTEGRADO -->
+        <aside class="sidebar">
+            <div class="sidebar-toggle">
+                <i class="fa-solid fa-bars"></i>
+            </div>
+
+            <nav class="menu">
+                <a href="dashboard.html" class="menu-item">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Inicio</span>
+                </a>
+                <a href="servicios.html" class="menu-item active">
+                    <i class="fa-solid fa-scissors"></i>
+                    <span>Servicios</span>
+                </a>
+                <a href="citas.html" class="menu-item">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>Citas</span>
+                </a>
+                <a href="mascotas.html" class="menu-item">
+                    <i class="fa-solid fa-paw"></i>
+                    <span>Mascotas</span>
+                </a>
+            </nav>
+
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="user-info">
+                    <strong>Admin</strong>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CONTENIDO PRINCIPAL -->
         <main class="main-content">
             <div class="glass-panel">
                 
@@ -20,7 +58,7 @@
                         <h2>Gestión de Servicios</h2>
                         <button class="btn-primary" id="btn-agregar-servicio">+ Nuevo Servicio</button>
                     </div>
-                    <div id="services-container" class="pets-grid">
+                    <div id="services-container" class="services-list">
                         <!-- Se llena dinámicamente con servicios.js -->
                     </div>
                 </div>
@@ -29,6 +67,7 @@
         </main>
     </div>
 
+    <!-- MODAL EMERGENTE CREAR / EDITAR SERVICIO -->
     <div id="modalServicio" class="modal-overlay" style="display: none;">
         <div class="modal-box" style="width: 500px; text-align: left;">
             <h3 id="modalTitulo" style="margin-bottom: 15px; font-size: 20px;">Nuevo Servicio</h3>
@@ -81,6 +120,7 @@
         </div>
     </div>
 
+    <!-- SCRIPTS DE NAVEGACIÓN Y LÓGICA -->
     <script src="js/sidebar-common.js"></script>
     <script src="js/servicios.js"></script>
 </body>
